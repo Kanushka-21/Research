@@ -1,0 +1,85 @@
+\documentclass[a4paper, 12pt]{article}
+
+% Packages
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{multirow, tabularx}
+\usepackage{longtable}
+\usepackage{datetime}
+\usepackage{mathptmx}
+\usepackage{float}
+\usepackage{natbib}
+\usepackage{lipsum}
+
+\newdateformat{monthyeardate}{\monthname[\THEMONTH] \THEYEAR}
+
+% Harvard style referencing
+\bibliographystyle{agsm}
+
+% Formatting
+\geometry{margin=1in}
+\setstretch{1.5}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\itshape}{\thesubsubsection}{1em}{}
+
+\pagenumbering{roman}
+\begin{document}
+	% Title Page
+	\input{preliminary_pages/title_page}
+
+        \input{preliminary_pages/declaration}
+	
+	% Table of Contents
+	\addcontentsline{toc}{section}{Table of Contents}
+	\tableofcontents
+	\cleardoublepage
+
+	%If figures are there, keep this. Otherwise remove this List of Figures
+	%%Starts - List of Figures%%
+	\addcontentsline{toc}{section}{List of Figures}
+	\listoffigures
+	\cleardoublepage
+	%%Ends - List of Figures%%
+
+	%If table are there, keep this. Otherwise remove this List of Tables
+	%%Starts - List of Tables%%
+	\addcontentsline{toc}{section}{List of Tables}
+	\listoftables
+	\cleardoublepage
+	%%Ends - List of Figures%%
+
+	%If abbreviations are there, keep this. Otherwise remove this List of Abbreviations
+	%%Starts - List of Abbreviations%%
+	\addcontentsline{toc}{section}{List of Abbreviations}
+	\section*{List of Abbreviations}
+	\input{preliminary_pages/abbreviations}
+	\cleardoublepage
+	%%Ends - List of Abbreviations%%
+	
+	% Main Body	
+	\pagenumbering{arabic}
+	\input{sections/section01}	
+	\newpage
+	
+	\input{sections/section02}	
+	\newpage
+	
+	\input{sections/section03}	
+	\newpage
+	
+	\input{sections/section04}		
+	\newpage
+	
+	\input{sections/section05}			
+	\newpage
+
+        \input{sections/section06}			
+	\newpage
+	
+	\bibliography{references} % Your bibliography file (.bib)
+	\addcontentsline{toc}{section}{References}	
+\end{document}
