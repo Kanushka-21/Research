@@ -225,47 +225,94 @@ the top of the file, flash it. **Not yet tested on real hardware** — see §5.
 
 ## 4. Model status
 
-**Currently deployed (as of 2026-07-25)**: `runs_local/tomato_5class_local/weights/best.pt` —
-YOLOv8m, retrained locally via `train_local.py` on the re-annotated Roboflow Version_04 export
-(early-stopped at epoch 49, patience=25, best checkpoint epoch 24). `conveyor_core.py`'s
-`MODEL_PATH` points here now, so `dashboard_app.py` and `conveyor_integration.py` both use it.
+**Currently deployed (as of 2026-07-29)**: `runs_local/tomato_5class_v6_balanced/weights/best.pt` —
+YOLOv8m, retrained locally via `train_local.py --name tomato_5class_v6_balanced` on the
+`tomato_project.v6-version_05.yolov8` export (early-stopped at epoch 77, patience=25, best
+checkpoint epoch 52). `conveyor_core.py`'s `MODEL_PATH` points here now, so `dashboard_app.py`
+and `conveyor_integration.py` both use it.
 
-**Held-out test-set results** (845 images never seen during training, via `model.val(split="test")`):
+**Why this retrain happened**: live-camera testing of the previous model (2026-07-26) found
+healthy breaker/turning/red tomatoes being misclassified as "defect" under real lighting. Root
+cause traced to a domain/color confound — `defect` training images were mostly external
+(Kaggle) photos on varied backgrounds/lighting, while the other 4 classes were all
+photobox-captured, so the model partly learned "this camera's lighting → defect" as a shortcut.
+Fix: deleted the irrelevant/mismatched defect images, added new self-captured, whole-tomato-box
+annotated defect photos (v6 export). This dropped defect's raw training count to 448 instances
+(vs. 1137-1434 for the other classes), so `augment_defect_class.py` was written to generate
+896 offline, bbox-aware augmented copies (flip/rotate/scale/brightness/hue jitter) of the 334
+defect-only training images, bringing defect to 1344 train instances — in line with the rest.
+Augmentation was added only to the train split (via `data_balanced.yaml`, a second `train:` path
+alongside the untouched original) — valid/test were never touched, so the numbers below are honest.
+
+**Held-out test-set results** (777 images, `model.val(split="test")`):
 
 | Class | Precision | Recall | mAP50 | mAP50-95 |
 |---|---|---|---|---|
-| breaker | 0.903 | 0.948 | 0.952 | 0.759 |
-| defect | 0.870 | 0.978 | **0.940** | 0.765 |
-| green | 0.974 | 0.979 | 0.991 | 0.683 |
-| red | 0.975 | 0.968 | 0.984 | 0.734 |
-| turning | 0.902 | 0.867 | 0.941 | 0.757 |
-| **Overall** | 0.925 | 0.948 | **0.962** | 0.739 |
+| breaker | 0.924 | 0.937 | 0.966 | 0.762 |
+| defect | 0.766 | 0.818 | **0.804** | 0.599 |
+| green | 0.976 | 0.990 | 0.982 | 0.722 |
+| red | 0.987 | 0.958 | 0.988 | 0.724 |
+| turning | 0.880 | 0.906 | 0.941 | 0.749 |
+| **Overall** | 0.906 | 0.922 | **0.936** | 0.711 |
+
+F1-confidence curve peaks at **0.91 overall F1 at confidence≈0.49** — matches the deployed
+`CONFIDENCE_THRESHOLD=0.45` in `conveyor_core.py` closely, no retuning needed there.
+
+**Defect vs. the previous local retrain (0.940 mAP50) — not an apples-to-apples comparison.**
+The test set's defect images changed too (same cleanup: old irrelevant images removed, new
+self-captured ones added), so 0.804 is measured against a smaller (66-instance), harder, more
+realistic sample — not a regression on the same images. The **confusion matrix** tells the more
+useful story: of true defect tomatoes, 80% are correctly labeled defect, only ~9% missed, and
+leakage to other classes is small (6 breaker, 2 red, 4 turning out of 66) — defect is no longer
+the primary confusion source.
+
+**The real remaining weak point, found via the confusion matrix (not visible in the mAP table
+alone): the ripeness classes confuse each other along the color continuum.** At a fixed
+low-confidence operating point, true breaker tomatoes were labeled breaker only 39% of the time —
+43% were called green, 26% turning. True turning was correctly labeled 40% of the time — 24%
+called breaker, 27% called red. This is breaker/turning sitting on a continuous gradient between
+green and red, not a hard boundary — a real, explainable limitation worth a paragraph in the
+discussion section, distinct from (and now larger than) the original defect-annotation bug.
 
 All curves/graphs (results.png, confusion matrices, PR/F1 curves, sample predictions) are saved
-under `runs_local/tomato_5class_local/` (training-run split) and `runs_local/tomato_5class_local/test_eval/`
-(official held-out test-set split) — not committed to git (see `.gitignore`), regenerable via
-`train_local.py`.
+under `runs_local/tomato_5class_v6_balanced/` (training-run split) and
+`runs_local/tomato_5class_v6_balanced/test_eval/` (official held-out test-set split) — not
+committed to git (see `.gitignore`), regenerable via `train_local.py`.
 
-**Old model** (`Output/kaggle/TOMATO_MODEL_RESULTS/best.pt`, YOLOv8m, 150 epochs, trained via
-`kaggle_unified_5class_.ipynb`) is superseded but left in place for reference/rollback. Its
-green/red/breaker/turning PR was 0.96–0.99, but **defect PR was only 0.595** — see root cause below.
+**Previous local retrain** (`runs_local/tomato_5class_local/weights/best.pt`, deployed
+2026-07-25–2026-07-29) kept for reference/comparison — its test-set defect mAP50 was 0.940, but
+that number came from a test set that still had the domain-confound defect images in it; see
+above. Overall mAP50 was 0.962 on that (now-superseded) test split.
 
-### Root cause of the (now-fixed) weak defect class (found 2026-07-23, fixed 2026-07-25)
+**Original Kaggle model** (`Output/kaggle/TOMATO_MODEL_RESULTS/best.pt`, YOLOv8m, 150 epochs,
+trained via `kaggle_unified_5class_.ipynb`) is superseded but left in place for reference/rollback.
+Its green/red/breaker/turning PR was 0.96-0.99, but **defect PR was only 0.595** — the original
+polygon-vs-bbox annotation bug, see below.
 
-Some `defect`-class images (from external/public datasets) were annotated with a **polygon
-around only the blemish**, while others used a **whole-tomato bounding box** like every other
-class. Mixing box scale/shape within one class breaks YOLO's implicit per-class object-scale
-assumptions (matters for anchor/FPN-level assignment) — this is the direct, mechanical cause of
-defect's uniquely poor performance vs. every other class sitting above 0.95 PR.
+### Root cause history: two separate defect problems, fixed in sequence
 
-**Fixed**: re-annotated existing defect images in Roboflow with whole-tomato boxes (same
-convention as the other 4 classes), re-exported as Version_04, retrained. Confirmed fixed:
-defect mAP50 went from 0.595 to 0.940 (+0.345) on the held-out test set, now in line with the
-other four classes.
+**Problem 1 (found 2026-07-23, fixed 2026-07-25): mixed annotation convention.** Some
+`defect`-class images were annotated with a polygon around only the blemish, others with a
+whole-tomato box like every other class. Mixing box scale/shape within one class breaks YOLO's
+per-class object-scale assumptions. Fixed by re-annotating with whole-tomato boxes (Version_04
+export); defect mAP50 went 0.595 → 0.940 on that test set. `train_local.py --audit-only` checks
+mean relative box area per class and flags any class sitting below 35% of the median, so this
+specific bug is now caught automatically on future exports.
 
-`train_local.py`'s `--audit-only` mode checks mean relative box area per class and flags any
-class sitting below 35% of the median — this specific bug class will be caught automatically on
-future dataset exports.
+**Problem 2 (found 2026-07-26, mitigated 2026-07-29): domain/color confound.** Even with
+consistent box annotation, the defect class was sourced from different photography conditions
+(Kaggle, varied backgrounds/lighting) than the other 4 classes (photobox-captured), causing live
+misclassification of healthy tomatoes as defect under real lighting. See "why this retrain
+happened" above. Also applied as a stopgap in `conveyor_core.py`: `DEFECT_OVERRIDE_CONFIDENCE`
+raised 0.50→0.80, and the defect-override vote now requires both a minimum frame count AND a
+minimum fraction of a tomato's tracked frames (`DEFECT_OVERRIDE_MIN_FRACTION=0.35`), so a couple
+of flickering false-positive defect frames can no longer out-vote a real ripeness majority.
+
+**Separately found, not yet fixed (2026-07-29, pre-existing since v5, unrelated to defect):**
+418 breaker + 38 turning + 2 green label files in the dataset use polygon points instead of
+boxes; Ultralytics silently drops those instances during training (confirmed identical in v5, so
+this is not a regression from the recent defect cleanup). Not urgent since those classes already
+score well, but worth fixing in Roboflow before the next retrain.
 
 ### The "improved" second model (`newModel/`) is a dead end
 

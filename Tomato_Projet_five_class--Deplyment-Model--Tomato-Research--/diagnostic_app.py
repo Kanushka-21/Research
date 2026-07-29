@@ -10,7 +10,7 @@ from PIL import Image
 st.set_page_config(page_title="Tomato Detection Diagnostic", layout="wide")
 st.title("🔍 Tomato Detection Diagnostic Tool")
 
-MODEL_PATH = r"runs_local/tomato_5class_local/weights/best.pt"
+MODEL_PATH = r"runs_local/tomato_5class_v6_balanced/weights/best.pt"
 
 CLASS_NAMES = {
     0: "breaker",

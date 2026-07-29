@@ -44,7 +44,7 @@ from collections import defaultdict
 from database import save_detection, SHELF_LIFE
 
 # ==================== CONFIG ====================
-MODEL_PATH = r"runs_local/tomato_5class_local/weights/best.pt"  # retrained 2026-07-25, defect mAP50 0.595 -> 0.940
+MODEL_PATH = r"runs_local/tomato_5class_v6_balanced/weights/best.pt"  # retrained 2026-07-29 on cleaned+balanced defect data, see tomato-defect-domain-confound memory
 CONFIDENCE_THRESHOLD = 0.45  # matches the F1-optimal point from the training-curve analysis
 INFERENCE_IMGSZ = 640  # not 320 -- keep full resolution, this is what conveyor timing budget can afford
 

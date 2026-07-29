@@ -48,15 +48,25 @@ def load_data_yaml(data_yaml_path: Path) -> dict:
 
 def resolve_split_dirs(data_yaml_path: Path, data_cfg: dict) -> dict:
     """Roboflow YOLO exports use relative paths (../train/images etc.) resolved
-    relative to the data.yaml location, not the CWD."""
+    relative to the data.yaml location, not the CWD. An explicit 'path:' key
+    (used by data_balanced.yaml) overrides that base. A split value can also be
+    a list of paths (used to add an offline-augmented supplement on top of the
+    untouched original split, e.g. train: [train/images, ../defect_aug/images]) --
+    matches how ultralytics' own check_det_dataset() resolves data.yaml."""
     base = data_yaml_path.parent
+    if data_cfg.get("path"):
+        base = Path(data_cfg["path"])
+        if not base.is_absolute():
+            base = (data_yaml_path.parent / base).resolve()
     splits = {}
     for split in ("train", "val", "test"):
         rel = data_cfg.get(split)
         if rel is None:
             continue
-        img_dir = (base / rel).resolve()
-        splits[split] = img_dir
+        if isinstance(rel, list):
+            splits[split] = [(base / r).resolve() for r in rel]
+        else:
+            splits[split] = (base / rel).resolve()
     return splits
 
 
@@ -109,21 +119,36 @@ def audit_dataset(data_yaml_path: Path) -> bool:
     print("\n--- Per-split, per-class instance counts ---")
     split_image_hashes = {}
     box_areas_by_class = defaultdict(list)  # relative area (w*h, normalized 0-1) per class, across all splits
-    for split, img_dir in splits.items():
-        label_dir = Path(str(img_dir).replace("images", "labels"))
-        if not img_dir.exists():
-            print(f"[FAIL] {split}: image dir missing -> {img_dir}")
-            ok = False
-            continue
+    for split, img_dirs in splits.items():
+        # A split can be a single dir (normal case) or a list of dirs (used by
+        # data_balanced.yaml to add an offline-augmented supplement on top of the
+        # untouched original train/images -- see augment_defect_class.py).
+        if isinstance(img_dirs, list):
+            dirs_for_split = img_dirs
+        else:
+            dirs_for_split = [img_dirs]
 
-        images = [p for p in img_dir.iterdir() if p.suffix.lower() in IMG_EXTS]
+        images = []
+        label_dir_for = {}
+        for img_dir in dirs_for_split:
+            label_dir = Path(str(img_dir).replace("images", "labels"))
+            if not img_dir.exists():
+                print(f"[FAIL] {split}: image dir missing -> {img_dir}")
+                ok = False
+                continue
+            these_images = [p for p in img_dir.iterdir() if p.suffix.lower() in IMG_EXTS]
+            images.extend(these_images)
+            for p in these_images:
+                label_dir_for[p] = label_dir
+        if not images:
+            continue
         class_counts = Counter()
         orphan_images = []
         empty_labels = []
         hashes = {}
 
         for img_path in images:
-            label_path = label_dir / (img_path.stem + ".txt")
+            label_path = label_dir_for[img_path] / (img_path.stem + ".txt")
             if not label_path.exists():
                 orphan_images.append(img_path.name)
                 continue
@@ -248,7 +273,7 @@ def preflight_check(device: str) -> bool:
 RUNS_DIR = Path(__file__).resolve().parent / "runs_local"
 
 
-def train(data_yaml_path: Path, epochs: int, batch, device: str):
+def train(data_yaml_path: Path, epochs: int, batch, device: str, name: str):
     from ultralytics import YOLO
     import torch
 
@@ -309,14 +334,14 @@ def train(data_yaml_path: Path, epochs: int, batch, device: str):
         # which scattered a completed run outside this repo once already. Absolute
         # path sidesteps that entirely, confirmed empirically 2026-07-25.
         project=str(RUNS_DIR),
-        name="tomato_5class_local",
+        name=name,
         exist_ok=True,
         verbose=True,
     )
     return results
 
 
-def evaluate_test_set(data_yaml_path: Path, weights_path: Path):
+def evaluate_test_set(data_yaml_path: Path, weights_path: Path, name: str):
     """This is the step the Kaggle notebook never did. Run this and report THESE
     numbers as the official results -- not the validation-split confusion matrix
     that training produces automatically."""
@@ -328,7 +353,7 @@ def evaluate_test_set(data_yaml_path: Path, weights_path: Path):
     model = YOLO(str(weights_path))
     metrics = model.val(
         data=str(data_yaml_path), split="test",
-        project=str(RUNS_DIR), name="tomato_5class_local/test_eval", exist_ok=True,
+        project=str(RUNS_DIR), name=f"{name}/test_eval", exist_ok=True,
     )
     print(f"\nTest mAP50:    {metrics.box.map50:.4f}")
     print(f"Test mAP50-95: {metrics.box.map:.4f}")
@@ -368,6 +393,10 @@ if __name__ == "__main__":
     parser.add_argument("--batch", default=-1, help="-1 for auto-batch (recommended on an unknown 8GB GPU)")
     parser.add_argument("--device", default="0", help='"0" for single GPU, "cpu" for CPU-only')
     parser.add_argument("--audit-only", action="store_true", help="Run the dataset audit and exit, don't train")
+    parser.add_argument("--name", default="tomato_5class_local",
+                         help="Run folder name under runs_local/ -- use a NEW name for each dataset "
+                              "version so old runs (curves, weights, test_eval) aren't overwritten. "
+                              "exist_ok=True means the same name merges into the existing folder.")
     args = parser.parse_args()
 
     data_yaml_path = Path(args.data).resolve()
@@ -386,10 +415,10 @@ if __name__ == "__main__":
         print("\nPreflight failed -- fix the issue above before starting a multi-hour run.")
         sys.exit(1)
 
-    train(data_yaml_path, epochs=args.epochs, batch=args.batch, device=args.device)
+    train(data_yaml_path, epochs=args.epochs, batch=args.batch, device=args.device, name=args.name)
 
-    best_weights = RUNS_DIR / "tomato_5class_local" / "weights" / "best.pt"
+    best_weights = RUNS_DIR / args.name / "weights" / "best.pt"
     if best_weights.exists():
-        evaluate_test_set(data_yaml_path, best_weights)
+        evaluate_test_set(data_yaml_path, best_weights, name=args.name)
     else:
         print(f"\n[WARN] Expected weights not found at {best_weights} -- run test evaluation manually.")
