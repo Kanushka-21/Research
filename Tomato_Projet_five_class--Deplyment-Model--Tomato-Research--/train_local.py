@@ -32,6 +32,14 @@ EXPECTED_CLASS_ORDER = ["breaker", "defect", "green", "red", "turning"]
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
 
+# Defect-class PR from the currently-deployed model (Output/kaggle/TOMATO_MODEL_RESULTS,
+# see MODEL_CONFIG.md / Tomato_Progress.pdf Fig. 8), trained on the mixed
+# polygon-vs-whole-box defect annotations. Every other class sits above 0.95 PR on that
+# same run, so this is the number the re-annotation fix (whole-tomato box for defect,
+# same convention as the other 4 classes) is meant to move. Kept here so
+# evaluate_test_set() can print an explicit before/after instead of a bare number.
+BASELINE_DEFECT_PR = 0.595
+
 
 def load_data_yaml(data_yaml_path: Path) -> dict:
     with open(data_yaml_path, "r") as f:
@@ -197,6 +205,49 @@ def audit_dataset(data_yaml_path: Path) -> bool:
     return ok
 
 
+def preflight_check(device: str) -> bool:
+    """Fail fast with an actionable message instead of a multi-hour job crashing
+    5 minutes in, or silently falling back to CPU. Checked once here because this
+    machine had no torch/ultralytics installed at all as of 2026-07-23 -- if that's
+    still true, the error below is clearer than the ImportError this would otherwise
+    raise from inside model.train()."""
+    try:
+        import torch
+    except ImportError:
+        print("[PREFLIGHT FAIL] torch is not installed in this environment.")
+        print("    Install a CUDA-matched build first, e.g. (driver reports CUDA 13.1):")
+        print("    pip install torch --index-url https://download.pytorch.org/whl/cu121")
+        print("    (check https://pytorch.org/get-started/locally/ for the current cu1xx tag)")
+        return False
+
+    try:
+        import ultralytics  # noqa: F401
+    except ImportError:
+        print("[PREFLIGHT FAIL] ultralytics is not installed. Run: pip install ultralytics")
+        return False
+
+    if device != "cpu" and not torch.cuda.is_available():
+        print("[PREFLIGHT FAIL] device requested is not 'cpu' but torch.cuda.is_available() "
+              "is False. Either fix the CUDA/driver/torch-build mismatch, or pass --device cpu "
+              "(expect this to be far slower on 150-200 epochs).")
+        return False
+
+    if torch.cuda.is_available():
+        free_mem, total_mem = torch.cuda.mem_get_info(0)
+        free_gb, total_gb = free_mem / 1e9, total_mem / 1e9
+        print(f"[PREFLIGHT] GPU: {torch.cuda.get_device_name(0)}  "
+              f"VRAM free: {free_gb:.1f} / {total_gb:.1f} GB")
+        if free_gb < 3.0:
+            print(f"    [WARN] Only {free_gb:.1f} GB free -- close other GPU-using apps "
+                  "(games, other training jobs, browser hardware acceleration) before starting "
+                  "a real run, or auto-batch (--batch -1) may pick a batch size that OOMs partway "
+                  "through training instead of at startup.")
+    return True
+
+
+RUNS_DIR = Path(__file__).resolve().parent / "runs_local"
+
+
 def train(data_yaml_path: Path, epochs: int, batch, device: str):
     from ultralytics import YOLO
     import torch
@@ -212,6 +263,15 @@ def train(data_yaml_path: Path, epochs: int, batch, device: str):
     # (Output/kaggle/TOMATO_MODEL_RESULTS/args.yaml -> 87% mAP50), adjusted only
     # for single-GPU/8GB hardware. Everything else is left as-is deliberately --
     # change one variable at a time from here, don't re-tune blind.
+    #
+    # If the re-annotation fix alone doesn't bring defect PR close to the other classes,
+    # published work on this exact failure mode (small/tiny-defect detection bias) points at
+    # architecture-level fixes rather than more hyperparameter tuning -- e.g. adding a P2
+    # high-resolution detection head (YOLO-TinyFuse, Cherry-YOLO) or a scale-gated
+    # consistency term during training (tiny-defect scale-bias correction reported taking
+    # mAP50 28%->63% on a comparable tiny-defect benchmark). Try the annotation fix first
+    # and re-measure before reaching for any of this -- it's a bigger change than swapping
+    # a hyperparameter.
     results = model.train(
         data=str(data_yaml_path),
         epochs=epochs,
@@ -244,7 +304,11 @@ def train(data_yaml_path: Path, epochs: int, batch, device: str):
         mosaic=1.0,
         mixup=0.15,
         erasing=0.4,
-        project="runs_local",
+        # Absolute path -- Ultralytics' global settings.json has its own runs_dir
+        # (see `yolo settings`) that silently prefixes a bare relative project name,
+        # which scattered a completed run outside this repo once already. Absolute
+        # path sidesteps that entirely, confirmed empirically 2026-07-25.
+        project=str(RUNS_DIR),
         name="tomato_5class_local",
         exist_ok=True,
         verbose=True,
@@ -262,17 +326,38 @@ def evaluate_test_set(data_yaml_path: Path, weights_path: Path):
     print("TEST-SET EVALUATION (held-out, unbiased -- report these numbers)")
     print("=" * 70)
     model = YOLO(str(weights_path))
-    metrics = model.val(data=str(data_yaml_path), split="test")
+    metrics = model.val(
+        data=str(data_yaml_path), split="test",
+        project=str(RUNS_DIR), name="tomato_5class_local/test_eval", exist_ok=True,
+    )
     print(f"\nTest mAP50:    {metrics.box.map50:.4f}")
     print(f"Test mAP50-95: {metrics.box.map:.4f}")
     print(f"Test Precision (mean): {metrics.box.mp:.4f}")
     print(f"Test Recall (mean):    {metrics.box.mr:.4f}")
     print("\nPer-class mAP50:")
+    defect_ap50 = None
     for i, cls_name in enumerate(EXPECTED_CLASS_ORDER):
         try:
-            print(f"    {cls_name:<10} {metrics.box.ap50[i]:.4f}")
+            ap50 = metrics.box.ap50[i]
+            print(f"    {cls_name:<10} {ap50:.4f}")
+            if cls_name == "defect":
+                defect_ap50 = ap50
         except (IndexError, AttributeError):
             pass
+
+    # The whole point of this retrain is fixing the defect class's annotation-convention
+    # bug (mixed blemish-polygon vs. whole-tomato-box) -- make that comparison explicit
+    # instead of leaving it to be eyeballed against an old markdown file.
+    if defect_ap50 is not None:
+        print(f"\nDefect class: {defect_ap50:.4f} (was {BASELINE_DEFECT_PR:.4f} before the "
+              f"re-annotation fix)")
+        if defect_ap50 > BASELINE_DEFECT_PR:
+            print(f"    IMPROVED by {defect_ap50 - BASELINE_DEFECT_PR:+.4f} -- re-annotation fix appears to have worked.")
+        else:
+            print("    NOT IMPROVED -- if the Roboflow re-annotation is actually complete and "
+                  "re-exported, re-run --audit-only and check the box-scale-consistency section "
+                  "for remaining outliers before concluding the fix didn't help.")
+
     return metrics
 
 
@@ -297,9 +382,13 @@ if __name__ == "__main__":
               "then remove that flag to train.")
         sys.exit(1)
 
+    if not preflight_check(args.device):
+        print("\nPreflight failed -- fix the issue above before starting a multi-hour run.")
+        sys.exit(1)
+
     train(data_yaml_path, epochs=args.epochs, batch=args.batch, device=args.device)
 
-    best_weights = Path("runs_local/tomato_5class_local/weights/best.pt")
+    best_weights = RUNS_DIR / "tomato_5class_local" / "weights" / "best.pt"
     if best_weights.exists():
         evaluate_test_set(data_yaml_path, best_weights)
     else:

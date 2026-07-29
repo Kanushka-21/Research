@@ -1,0 +1,20 @@
+# Confirmed working together on this project as of 2026-07-23 (Python 3.11.9, RTX 3070 Ti).
+#
+# torch/torchvision need the CUDA index, not plain PyPI -- see PROJECT.md section 3
+# for why `pip install -r requirements.txt` alone is not enough on a fresh machine:
+#
+#   pip install -r requirements.txt
+#   pip install --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu128
+
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+torch==2.11.0+cu128
+torchvision==0.26.0+cu128
+ultralytics==8.4.104
+opencv-python==5.0.0.93
+streamlit==1.60.0
+plotly==6.9.0
+pandas==3.0.5
+numpy==2.4.4
+PyYAML==6.0.3
+pyserial==3.5

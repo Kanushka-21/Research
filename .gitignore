@@ -1,2 +1,11 @@
 __pycache__/
 *.pyc
+
+# Local Python env — see PROJECT.md, path kept as-is per team decision
+.venv/
+
+# Roboflow dataset exports (thousands of images, not source-controllable)
+dataset/
+
+# Local training runs (checkpoints/plots, regenerable via train_local.py)
+Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/runs_local/
