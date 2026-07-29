@@ -28,6 +28,8 @@ from conveyor_core import (
     EventScheduler,
     SerialSender,
     TomatoSession,
+    get_distractor_boxes,
+    is_distractor_box,
 )
 
 
@@ -52,7 +54,7 @@ def run():
     scheduler = EventScheduler(sender)
     session = TomatoSession(scheduler, tab_source="conveyor")
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0)  # DSHOW default -- see dashboard_app.py for why CAP_MSMF was tried and reverted
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     cap.set(cv2.CAP_PROP_FPS, 30)
@@ -68,15 +70,25 @@ def run():
             results = model(frame, conf=CONFIDENCE_THRESHOLD, verbose=False,
                              device=device, imgsz=INFERENCE_IMGSZ)
 
+            distractor_boxes = get_distractor_boxes(frame, device=device)
+
             detections = []
             if results[0].boxes is not None:
                 for box in results[0].boxes:
                     cls_id = int(box.cls[0])
                     if cls_id not in (0, 1, 2, 3, 4):
                         continue
-                    class_name = model.names[cls_id]
                     conf = float(box.conf[0])
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+
+                    is_distractor, distractor_class = is_distractor_box((x1, y1, x2, y2), distractor_boxes)
+                    if is_distractor:
+                        cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (128, 128, 128), 1)
+                        cv2.putText(frame, f"ignored ({distractor_class})", (int(x1), int(y1) - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (128, 128, 128), 1)
+                        continue
+
+                    class_name = model.names[cls_id]
                     detections.append({"class": class_name, "conf": conf})
                     color = (0, 255, 0) if class_name != "defect" else (128, 128, 128)
                     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)

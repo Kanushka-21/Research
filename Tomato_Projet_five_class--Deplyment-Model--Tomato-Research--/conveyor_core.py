@@ -40,6 +40,7 @@ import heapq
 import threading
 import time
 from collections import defaultdict
+from pathlib import Path
 
 from database import save_detection, SHELF_LIFE
 
@@ -47,6 +48,32 @@ from database import save_detection, SHELF_LIFE
 MODEL_PATH = r"runs_local/tomato_5class_v6_balanced/weights/best.pt"  # retrained 2026-07-29 on cleaned+balanced defect data, see tomato-defect-domain-confound memory
 CONFIDENCE_THRESHOLD = 0.45  # matches the F1-optimal point from the training-curve analysis
 INFERENCE_IMGSZ = 640  # not 320 -- keep full resolution, this is what conveyor timing budget can afford
+
+# Every local training run lives under here (see train_local.py's RUNS_DIR) -- used to build
+# the model picker in dashboard_app.py so old runs stay selectable for comparison instead of
+# only ever using whatever MODEL_PATH above currently points to.
+RUNS_DIR = Path(__file__).resolve().parent / "runs_local"
+KAGGLE_MODEL_PATH = Path(__file__).resolve().parent / "Output" / "kaggle" / "TOMATO_MODEL_RESULTS" / "best.pt"
+
+
+def list_available_models():
+    """Scans runs_local/*/weights/best.pt (every local retrain, see train_local.py's --name)
+    plus the original Kaggle baseline if present. Returns a list of {'name', 'path', 'mtime'}
+    dicts sorted newest-trained first, so callers can default to models[0] for "last trained"."""
+    models = []
+    if RUNS_DIR.exists():
+        for run_dir in sorted(RUNS_DIR.iterdir()):
+            weights = run_dir / "weights" / "best.pt"
+            if weights.exists():
+                models.append({"name": run_dir.name, "path": str(weights), "mtime": weights.stat().st_mtime})
+    if KAGGLE_MODEL_PATH.exists():
+        models.append({
+            "name": "kaggle_original (pre-retrain baseline)",
+            "path": str(KAGGLE_MODEL_PATH),
+            "mtime": KAGGLE_MODEL_PATH.stat().st_mtime,
+        })
+    models.sort(key=lambda m: m["mtime"], reverse=True)
+    return models
 
 # --- TODO: measure these on the real rig before trusting this for actual sorting ---
 BELT_SPEED_CMS = 10.0  # cm/second -- PLACEHOLDER, measure or back-calculate from stepper step rate
@@ -83,6 +110,79 @@ DEFECT_OVERRIDE_MIN_FRACTION = 0.35  # ...AND those frames are at least this sha
 # the model was hitting 52-76% confidence on genuinely healthy breaker/turning/red tomatoes. This
 # is a stopgap (trades some true-defect recall for fewer false positives) until defect gets real
 # photobox-captured training examples across the color range -- see tomato-defect-annotation-bug memory.
+
+# ==================== NON-TOMATO OBJECT FILTER ====================
+# Found 2026-07-29: the tomato model only ever saw tomatoes during training, across its 5
+# classes -- it has no concept of "not a tomato". Any object-shaped blob near the camera
+# (a bottle cap, a phone) gets forced into whichever of the 5 classes its color/shape most
+# resembles (e.g. a blue cap -> "red"). Proper fix is retraining on self-captured negative
+# (background) photos from the same photobox, not done yet. As a stopgap, we run a second,
+# off-the-shelf COCO-pretrained model (80 general object classes, ships with this repo) on
+# every frame in parallel, and drop any tomato-model box that overlaps a confident detection
+# of a known non-tomato object. Zero retraining required.
+COCO_FILTER_MODEL_PATH = "yolo26n.pt"  # small/fast COCO-pretrained checkpoint -- this is just
+# a coarse "is this a common object" check, doesn't need a bigger model's accuracy
+COCO_FILTER_CONFIDENCE = 0.35
+COCO_FILTER_IOU_THRESHOLD = 0.3  # how much a tomato-model box must overlap a distractor box to be dropped
+COCO_DISTRACTOR_CLASSES = {
+    "bottle", "cup", "wine glass", "bowl", "cell phone", "remote", "book",
+    "scissors", "knife", "spoon", "fork", "banana", "apple", "orange",
+    "person", "mouse", "keyboard", "laptop", "teddy bear", "clock", "vase",
+}
+
+_coco_filter_model = None
+
+
+def _get_coco_filter_model():
+    """Lazy singleton -- only loaded the first time a caller actually asks for
+    distractor boxes, so scripts that never call get_distractor_boxes() (e.g.
+    diagnostic_app.py) don't pay the load cost."""
+    global _coco_filter_model
+    if _coco_filter_model is None:
+        from ultralytics import YOLO
+        _coco_filter_model = YOLO(COCO_FILTER_MODEL_PATH)
+    return _coco_filter_model
+
+
+def _iou(box_a, box_b):
+    ax1, ay1, ax2, ay2 = box_a
+    bx1, by1, bx2, by2 = box_b
+    ix1, iy1 = max(ax1, bx1), max(ay1, by1)
+    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+    inter = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+    area_a = max(0.0, ax2 - ax1) * max(0.0, ay2 - ay1)
+    area_b = max(0.0, bx2 - bx1) * max(0.0, by2 - by1)
+    union = area_a + area_b - inter
+    return inter / union if union > 0 else 0.0
+
+
+def get_distractor_boxes(frame, device="cpu"):
+    """Runs the COCO filter model once on the full frame. Returns a list of
+    (x1, y1, x2, y2, class_name, conf) for confidently-detected known
+    non-tomato objects (bottle, phone, etc). Caller checks each tomato-model
+    box against this list via is_distractor_box() before trusting it."""
+    coco_model = _get_coco_filter_model()
+    results = coco_model(frame, conf=COCO_FILTER_CONFIDENCE, verbose=False, device=device)
+    boxes = []
+    if results[0].boxes is not None:
+        for box in results[0].boxes:
+            class_name = coco_model.names[int(box.cls[0])]
+            if class_name not in COCO_DISTRACTOR_CLASSES:
+                continue
+            conf = float(box.conf[0])
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+            boxes.append((x1, y1, x2, y2, class_name, conf))
+    return boxes
+
+
+def is_distractor_box(box_xyxy, distractor_boxes):
+    """box_xyxy: (x1,y1,x2,y2) of a single tomato-model detection.
+    Returns (True, class_name) if it overlaps a known non-tomato object
+    enough to be treated as a false positive, else (False, None)."""
+    for dx1, dy1, dx2, dy2, class_name, conf in distractor_boxes:
+        if _iou(box_xyxy, (dx1, dy1, dx2, dy2)) >= COCO_FILTER_IOU_THRESHOLD:
+            return True, class_name
+    return False, None
 
 
 class SerialSender:

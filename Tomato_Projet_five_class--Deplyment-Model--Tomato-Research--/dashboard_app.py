@@ -30,6 +30,8 @@ import torch
 from ultralytics import YOLO
 import plotly.graph_objects as go
 
+from datetime import datetime
+
 from conveyor_core import (
     MODEL_PATH,
     CONFIDENCE_THRESHOLD,
@@ -40,6 +42,9 @@ from conveyor_core import (
     EventScheduler,
     SerialSender,
     TomatoSession,
+    get_distractor_boxes,
+    is_distractor_box,
+    list_available_models,
 )
 from database import get_statistics
 
@@ -87,6 +92,24 @@ col_settings, col_controls = st.columns([1, 1])
 
 with col_settings:
     st.subheader("Settings")
+
+    available_models = list_available_models()
+    if available_models:
+        model_labels = [
+            f"{m['name']}{'  (latest)' if i == 0 else ''}" for i, m in enumerate(available_models)
+        ]
+        selected_label = st.selectbox(
+            "Model", model_labels, index=0,
+            help="Defaults to the most recently trained model (runs_local/, newest first, plus "
+                 "the original Kaggle baseline). Pick another to compare against an older run.",
+        )
+        selected_model_path = available_models[model_labels.index(selected_label)]["path"]
+        selected_mtime = available_models[model_labels.index(selected_label)]["mtime"]
+        st.caption(f"`{selected_model_path}` -- trained {datetime.fromtimestamp(selected_mtime):%Y-%m-%d %H:%M}")
+    else:
+        selected_model_path = MODEL_PATH
+        st.warning(f"No trained models found under runs_local/ -- falling back to conveyor_core.MODEL_PATH ({MODEL_PATH})")
+
     conf_threshold = st.slider(
         "Confidence threshold", 0.05, 0.95, CONFIDENCE_THRESHOLD, key="conf_slider",
         help="Per-frame detection threshold fed into the tracker. F1-optimal point from "
@@ -97,6 +120,12 @@ with col_settings:
         help="Unchecked = SIMULATED mode (logs '[SIMULATED] would fire ...' instead of writing "
              "to a serial port). Check this only once the ESP32 is wired up and COM port in "
              "conveyor_core.py is correct.",
+    )
+    filter_non_tomato = st.checkbox(
+        "Filter out non-tomato objects (COCO check)", value=True,
+        help="Runs a second, general-purpose object detector alongside the tomato model and "
+             "drops any tomato-model box that overlaps a confident detection of a known "
+             "non-tomato object (bottle, phone, cup, etc). Uncheck to compare behavior without it.",
     )
 
 with col_controls:
@@ -169,6 +198,10 @@ render_kpis(kpi_placeholder)
 
 # ==================== MAIN LOOP ====================
 if st.session_state.streaming:
+    # Plain cv2.VideoCapture(0) (DSHOW default) -- tried CAP_MSMF 2026-07-29 to work around a
+    # one-off crash (see conveyor_core.py history), but MSMF couldn't open this webcam's driver
+    # at all, while DSHOW works reliably. Reverted. The crash is treated as a rare device-
+    # contention event (something else briefly holding the camera), not a backend defect.
     cap = cv2.VideoCapture(0)
     time.sleep(0.5)
     if not cap.isOpened():
@@ -190,7 +223,7 @@ if st.session_state.streaming:
         cap.set(cv2.CAP_PROP_AUTO_WB, 0)
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 = manual on most DirectShow/MSMF backends
 
-        model = YOLO(MODEL_PATH)
+        model = YOLO(selected_model_path)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model.to(device)
 
@@ -223,15 +256,25 @@ if st.session_state.streaming:
 
                 results = model(frame, conf=conf_threshold, verbose=False, device=device, imgsz=INFERENCE_IMGSZ)
 
+                distractor_boxes = get_distractor_boxes(frame, device=device) if filter_non_tomato else []
+
                 detections = []
                 if results[0].boxes is not None:
                     for box in results[0].boxes:
                         cls_id = int(box.cls[0])
                         if cls_id not in (0, 1, 2, 3, 4):
                             continue
-                        class_name = model.names[cls_id]
                         conf = float(box.conf[0])
                         x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+
+                        is_distractor, distractor_class = is_distractor_box((x1, y1, x2, y2), distractor_boxes)
+                        if is_distractor:
+                            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (128, 128, 128), 1)
+                            cv2.putText(frame, f"ignored ({distractor_class})", (int(x1), int(y1) - 10),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (128, 128, 128), 1)
+                            continue
+
+                        class_name = model.names[cls_id]
                         detections.append({"class": class_name, "conf": conf})
                         color = CLASS_COLORS_BGR.get(class_name, (255, 255, 255))
                         cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
