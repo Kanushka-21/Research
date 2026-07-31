@@ -7,5 +7,12 @@ __pycache__/
 # Roboflow dataset exports (thousands of images, not source-controllable)
 dataset/
 
-# Local training runs (checkpoints/plots, regenerable via train_local.py)
-Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/runs_local/
+# Local training runs -- track metrics/plots/configs and each run's best.pt (small enough,
+# and needed to actually redeploy without retraining), exclude the bulky intermediate
+# epoch*.pt/last.pt checkpoints (100-150MB each, regenerable via train_local.py or a resume)
+Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/runs_local/*/weights/*
+!Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/runs_local/*/weights/best.pt
+
+# Pretrained base checkpoints Ultralytics auto-downloads on first use -- not results,
+# no need to version them
+Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/*.pt

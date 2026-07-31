@@ -31,6 +31,7 @@ from ultralytics import YOLO
 import plotly.graph_objects as go
 
 from datetime import datetime
+from pathlib import Path
 
 from conveyor_core import (
     MODEL_PATH,
@@ -95,13 +96,17 @@ with col_settings:
 
     available_models = list_available_models()
     if available_models:
+        default_model_path = Path(MODEL_PATH).resolve()
+        default_index = next(
+            (i for i, m in enumerate(available_models) if Path(m["path"]).resolve() == default_model_path), 0
+        )
         model_labels = [
-            f"{m['name']}{'  (latest)' if i == 0 else ''}" for i, m in enumerate(available_models)
+            f"{m['name']}{'  (default)' if i == default_index else ''}" for i, m in enumerate(available_models)
         ]
         selected_label = st.selectbox(
-            "Model", model_labels, index=0,
-            help="Defaults to the most recently trained model (runs_local/, newest first, plus "
-                 "the original Kaggle baseline). Pick another to compare against an older run.",
+            "Model", model_labels, index=default_index,
+            help="Defaults to the current production model (conveyor_core.MODEL_PATH, YOLOv8m). "
+                 "Pick another (e.g. a newer retrain) to compare.",
         )
         selected_model_path = available_models[model_labels.index(selected_label)]["path"]
         selected_mtime = available_models[model_labels.index(selected_label)]["mtime"]
@@ -133,7 +138,10 @@ with col_controls:
     if st.button("Test camera", use_container_width=True):
         test_cap = cv2.VideoCapture(0)
         time.sleep(1)
-        ok = test_cap.isOpened() and test_cap.read()[0]
+        try:
+            ok = test_cap.isOpened() and test_cap.read()[0]
+        except cv2.error:
+            ok = False
         test_cap.release()
         st.success("Camera OK") if ok else st.error("Camera not found or can't read a frame.")
 
@@ -217,9 +225,31 @@ if st.session_state.streaming:
         # lighting change (adding a phone flashlight) caused the color rendering to keep
         # drifting for several seconds afterward, flipping breaker/turning/red between
         # correct and "defect" even with the tomato completely untouched.
+        # DSHOW occasionally throws instead of returning ret=False when something briefly
+        # contends for the device (see 2026-07-31 crash) -- usually clears within a frame or
+        # two, so tolerate isolated hiccups instead of aborting on the first one.
+        warmup_consecutive_fails = 0
+        warmup_failed = False
         for _ in range(30):
-            cap.read()
+            try:
+                cap.read()
+                warmup_consecutive_fails = 0
+            except cv2.error:
+                warmup_consecutive_fails += 1
+                if warmup_consecutive_fails > 10:
+                    warmup_failed = True
+                    break
             time.sleep(0.05)
+
+        if warmup_failed:
+            st.error(
+                "Camera driver hiccup while starting up (DSHOW kept throwing an exception). "
+                "This usually means something else is holding the webcam. Click Start again."
+            )
+            cap.release()
+            st.session_state.streaming = False
+            st.stop()
+
         cap.set(cv2.CAP_PROP_AUTO_WB, 0)
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 = manual on most DirectShow/MSMF backends
 
@@ -244,7 +274,10 @@ if st.session_state.streaming:
 
         try:
             while st.session_state.streaming:
-                ret, frame = cap.read()
+                try:
+                    ret, frame = cap.read()
+                except cv2.error:
+                    ret, frame = False, None
                 if not ret or frame is None:
                     consecutive_fails += 1
                     if consecutive_fails > 15:

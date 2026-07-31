@@ -1,7 +1,7 @@
 """
 Local YOLOv8m training script for the 5-class tomato model (breaker, defect, green, red, turning).
 
-Rewritten from kaggle_unified_5class_.ipynb to fix three problems found in the Kaggle pipeline:
+Rewritten from kaggle/kaggle_unified_5class.ipynb to fix three problems found in the Kaggle pipeline:
   1. No pre-training dataset audit (class-order mismatch and cross-split duplicates go undetected).
   2. No test-set evaluation -- the Kaggle notebook only ever reports validation-split metrics,
      which is the same split used for early-stopping/checkpoint selection (optimistic bias).
@@ -273,7 +273,7 @@ def preflight_check(device: str) -> bool:
 RUNS_DIR = Path(__file__).resolve().parent / "runs_local"
 
 
-def train(data_yaml_path: Path, epochs: int, batch, device: str, name: str):
+def train(data_yaml_path: Path, epochs: int, batch, device: str, name: str, base_model: str):
     from ultralytics import YOLO
     import torch
 
@@ -282,7 +282,8 @@ def train(data_yaml_path: Path, epochs: int, batch, device: str, name: str):
         print(f"GPU: {torch.cuda.get_device_name(0)}")
         print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
-    model = YOLO("yolov8m.pt")
+    print(f"Base checkpoint: {base_model}")
+    model = YOLO(base_model)
 
     # Baseline hyperparameters carried over from the known-good Kaggle run
     # (Output/kaggle/TOMATO_MODEL_RESULTS/args.yaml -> 87% mAP50), adjusted only
@@ -397,6 +398,9 @@ if __name__ == "__main__":
                          help="Run folder name under runs_local/ -- use a NEW name for each dataset "
                               "version so old runs (curves, weights, test_eval) aren't overwritten. "
                               "exist_ok=True means the same name merges into the existing folder.")
+    parser.add_argument("--model", default="yolov8m.pt",
+                         help="Base pretrained checkpoint to fine-tune, e.g. yolov8m.pt / yolo26m.pt / "
+                              "yolo26n.pt. Ultralytics auto-downloads it if not already present locally.")
     args = parser.parse_args()
 
     data_yaml_path = Path(args.data).resolve()
@@ -415,7 +419,8 @@ if __name__ == "__main__":
         print("\nPreflight failed -- fix the issue above before starting a multi-hour run.")
         sys.exit(1)
 
-    train(data_yaml_path, epochs=args.epochs, batch=args.batch, device=args.device, name=args.name)
+    train(data_yaml_path, epochs=args.epochs, batch=args.batch, device=args.device, name=args.name,
+          base_model=args.model)
 
     best_weights = RUNS_DIR / args.name / "weights" / "best.pt"
     if best_weights.exists():

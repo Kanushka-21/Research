@@ -93,27 +93,30 @@ train_local.py                     Local YOLOv8m training script, rewritten from
                                      seconds, not 20 minutes into a training run, and an explicit
                                      before/after defect-AP50 comparison against the 0.595
                                      pre-fix baseline printed at the end of evaluate_test_set().
-kaggle_unified_5class_.ipynb        Original Kaggle training notebook (v1, currently-deployed model)
-newModel/                           A second "improved" Kaggle run's outputs (curves, results.csv).
-                                     Its notebook file is 0 bytes — that run's config is
-                                     unreproducible. Do not treat this as a usable alternative
-                                     model; it only has by-product plots, not the recipe.
-
-streamlit_app_new.py                Main dashboard (webcam/upload + KPI + plotly charts) — current
-streamlit_app_old.py                Superseded version, kept for reference
+kaggle/kaggle_unified_5class.ipynb  Original Kaggle training notebook (v1, currently-deployed model)
+                                     (moved 2026-07-31 from repo root into kaggle/, alongside its
+                                     results, for a single consolidated Kaggle folder instead of
+                                     the notebook living at root while its outputs sat under Output/)
+dashboard_app.py                    Live conveyor dashboard (see above) — current recommended
+                                     live-camera tool, replaces the old streamlit_app_new.py
+                                     live-stream tab
+streamlit_app_new.py                Older webcam/upload + KPI + plotly dashboard — kept for its
+                                     non-live tabs (upload/KPI), but live-stream use should go
+                                     through dashboard_app.py instead
 streamlit_ui.py                     Minimal single-image upload UI
 diagnostic_app.py                   Stripped-down tool for inspecting raw model detections
 
-realtime_classifier_yolo_fast.py    Webcam inference, optimized for speed
-realtime_classifier_yolo_smooth.py  Webcam inference, optimized for stable/smoothed output
-realtime_classifier_yolo_smooth_debug.py / realtime_classifier_debug.py   Debug variants
+Output/tomato_logs/tomato_detections.db      Legacy detection log DB, no longer written to since
+                                              the realtime_classifier scripts were removed (below) --
+                                              kept only as a historical/read-only artifact
+tomato_detections.db                         Detection log DB used by the Streamlit app (current)
 
-fix_shelf_life.py                   One-off cleanup script (already run) that stripped a
-                                     duplicate hardcoded shelf-life dict out of streamlit_app_new.py
-
-Output/kaggle/TOMATO_MODEL_RESULTS/best.pt   <-- THE deployed model weights (v1, YOLOv8m)
-Output/tomato_logs/tomato_detections.db      Detection log DB used by the realtime scripts
-tomato_detections.db                         Detection log DB used by the Streamlit app (separate file)
+**Removed 2026-07-31** (folder cleanup, see below): `newModel/` (dead-end second Kaggle run, 0-byte
+notebook, unreproducible — see original note preserved below), `streamlit_app_old.py` (already
+known-superseded), `fix_shelf_life.py` (one-off migration script, already run against
+streamlit_app_new.py, no longer needed), all four `realtime_classifier_*.py` variants (webcam
+inference scripts predating `conveyor_core.py`/`dashboard_app.py`, confirmed unimported anywhere
+in the codebase, superseded by the tracked TomatoSession pipeline).
 
 MODEL_CONFIG.md                     Deployed model card (v1): classes, metrics, file locations
 TRAINING_GRAPHS_EXPLANATION.md      How to read the training curves/confusion matrix (presentation aid)
@@ -177,17 +180,16 @@ Confirmed working versions on this machine: `torch==2.11.0+cu128`, `torchvision=
 can't be imported or the ESP32 isn't connected, so you can develop the vision/timing logic on a
 laptop with just a webcam.)
 
-**Dashboard:**
+**Dashboard (live camera, current recommended tool):**
 ```bash
-streamlit run streamlit_app_new.py
+streamlit run dashboard_app.py
 ```
 Open http://localhost:8501.
 
-**Webcam real-time classifier (no hardware, just a laptop cam):**
+**Dashboard (older webcam/upload + KPI tabs):**
 ```bash
-python realtime_classifier_yolo_fast.py      # or _smooth.py for steadier output
+streamlit run streamlit_app_new.py
 ```
-Controls: Q = quit, S = screenshot, R = reset database.
 
 **Full conveyor bridge (camera → gate commands), works with or without the ESP32 plugged in:**
 ```bash
@@ -284,8 +286,8 @@ committed to git (see `.gitignore`), regenerable via `train_local.py`.
 that number came from a test set that still had the domain-confound defect images in it; see
 above. Overall mAP50 was 0.962 on that (now-superseded) test split.
 
-**Original Kaggle model** (`Output/kaggle/TOMATO_MODEL_RESULTS/best.pt`, YOLOv8m, 150 epochs,
-trained via `kaggle_unified_5class_.ipynb`) is superseded but left in place for reference/rollback.
+**Original Kaggle model** (`kaggle/TOMATO_MODEL_RESULTS/best.pt`, YOLOv8m, 150 epochs,
+trained via `kaggle/kaggle_unified_5class.ipynb`) is superseded but left in place for reference/rollback.
 Its green/red/breaker/turning PR was 0.96-0.99, but **defect PR was only 0.595** — the original
 polygon-vs-bbox annotation bug, see below.
 
@@ -314,11 +316,13 @@ boxes; Ultralytics silently drops those instances during training (confirmed ide
 this is not a regression from the recent defect cleanup). Not urgent since those classes already
 score well, but worth fixing in Roboflow before the next retrain.
 
-### The "improved" second model (`newModel/`) is a dead end
+### The "improved" second model (`newModel/`, removed 2026-07-31) was a dead end
 
-Its Kaggle notebook (`kaggle-unified-5class-v2-improved.xpynb`) is **0 bytes** — the training
-recipe that produced those curves/results.csv is unreproducible. Don't treat `newModel/`'s
-apparently-better numbers as a usable alternative; there's no way to regenerate those weights.
+A second "improved" Kaggle run's by-product outputs (curves, results.csv) used to live in
+`newModel/`. Its Kaggle notebook (`kaggle-unified-5class-v2-improved.xpynb`) was **0 bytes** — the
+training recipe that produced those curves/results.csv was unreproducible, so those numbers were
+never a usable alternative model; there was no way to regenerate the weights. Folder deleted during
+the 2026-07-31 repo cleanup rather than kept as a misleading artifact.
 
 ---
 
@@ -503,20 +507,17 @@ Sources: [arXiv:2403.07113](https://arxiv.org/pdf/2403.07113) ·
 
 ### Housekeeping
 - [x] Add a `requirements.txt` — done 2026-07-23, see §3 for the CUDA-index caveat
-- [ ] Decide on one canonical detection-log DB path — `tomato_detections.db` (repo root, used by
-      `streamlit_app_new.py`, `database.py`, and now `conveyor_core.py`/`dashboard_app.py`) vs.
-      `Output/tomato_logs/tomato_detections.db` (used only by `realtime_classifier_yolo_fast.py`
-      and `diagnostic_app.py`) — the new dashboard already standardizes on the root-level one,
-      shrinking this to just those two older scripts
-- [ ] Consolidate the four `realtime_classifier_*.py` variants and two `streamlit_app_*.py`
-      variants now that `dashboard_app.py` is the accurate-KPI live option, or at minimum add a
-      one-line comment at the top of each noting which one is current vs. superseded
-      (`streamlit_app_old.py` is already known-superseded)
+- [x] Canonical detection-log DB path decided 2026-07-31: `tomato_detections.db` (repo root) is
+      current, used by `streamlit_app_new.py`, `database.py`, `conveyor_core.py`/`dashboard_app.py`.
+      `Output/tomato_logs/tomato_detections.db` is now legacy/read-only -- its only writer
+      (`realtime_classifier_yolo_fast.py`) was removed the same day
+- [x] `streamlit_app_old.py`, `fix_shelf_life.py` (one-off, already run), and all four
+      `realtime_classifier_*.py` variants removed 2026-07-31 -- confirmed unimported anywhere
+      first. `streamlit_app_new.py` kept for its non-live upload/KPI tabs, which `dashboard_app.py`
+      doesn't cover yet; still a candidate for a future consolidation pass
 - [ ] Once `dashboard_app.py` has been run against the real camera at least once, fold any fixes
       back into `conveyor_core.py` so `conveyor_integration.py` benefits too
-- [ ] `newModel/` — either recover the real training config for the "v2 improved" run from
-      Kaggle's run history (if still available on the platform) or remove the misleading
-      by-product plots so nobody mistakes them for a usable model
+- [x] `newModel/` — removed 2026-07-31 (unreproducible, see §4)
 
 ---
 
@@ -529,5 +530,5 @@ Sources: [arXiv:2403.07113](https://arxiv.org/pdf/2403.07113) ·
   classifier with a separate HSV-based pre-filter, 4 classes) that doesn't match any script
   currently in this repo. Historical artifact — ignore it for current work.
 - Two SQLite databases exist at different paths depending on which script wrote to them (see §2).
-- `newModel/`'s notebook is empty — its results are not reproducible and shouldn't be cited as a
-  second validated model.
+- `newModel/` (removed 2026-07-31) had an empty notebook — its results were not reproducible and
+  should not be cited as a second validated model, even if referenced in older notes/screenshots.

@@ -3,7 +3,7 @@
 ## Model Information
 
 **Model**: YOLOv8 Medium (best.pt)  
-**Location**: `Output/kaggle/TOMATO_MODEL_RESULTS/best.pt`  
+**Location**: `kaggle/TOMATO_MODEL_RESULTS/best.pt`  
 **Training Data**: Kaggle Tomato Ripeness and Defect Dataset  
 **Task**: Multi-class Object Detection (5 classes)
 
