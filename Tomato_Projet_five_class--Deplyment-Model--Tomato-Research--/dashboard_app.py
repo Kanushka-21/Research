@@ -2,12 +2,13 @@
 Live conveyor dashboard: USB camera -> YOLOv8 -> per-tomato tracking -> gate
 actuation (real or simulated) -> accurate KPI display, all in one screen.
 
-This is the "more complete" replacement for the ad-hoc live-stream tab in
-streamlit_app_new.py. That tab calls save_detection() once per PROCESSED
-FRAME with no tracking, so a single tomato held in front of the camera for a
-few seconds logs as dozens of duplicate DB rows -- every KPI derived from
-that (throughput, class distribution, defect ratio) is inflated by however
-many frames a tomato happened to sit in view for.
+This is the "more complete" replacement for the ad-hoc live-stream tab that
+used to live in streamlit_app_new.py (removed 2026-08-01 -- it called
+save_detection() once per PROCESSED FRAME with no tracking, so a single
+tomato held in front of the camera for a few seconds logged as dozens of
+duplicate DB rows -- every KPI derived from that (throughput, class
+distribution, defect ratio) was inflated by however many frames a tomato
+happened to sit in view for).
 
 This app routes every detection through conveyor_core.TomatoSession instead,
 which is the same tracking/classification engine conveyor_integration.py uses

@@ -111,7 +111,7 @@ Output/
 
 ### Web Interface (Streamlit):
 ```bash
-.\.venv\Scripts\python.exe -m streamlit run streamlit_app_new.py
+.\.venv\Scripts\python.exe -m streamlit run dashboard_app.py
 ```
 Access: http://localhost:8501
 

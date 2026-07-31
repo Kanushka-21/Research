@@ -27,13 +27,13 @@ instead of crashing, so you can validate the vision/timing/queueing logic on
 a laptop with just a webcam before any wiring exists.
 
 Each confirmed tomato is logged to the DB exactly ONCE, when its track
-finalizes -- not once per frame. This is the behaviour streamlit_app_new.py's
-live-stream tab does NOT have (it calls save_detection() on every processed
-frame with no tracking, so one tomato held in front of the camera for a few
-seconds logs as dozens of duplicate rows and inflates every KPI). Anything
-that wants accurate throughput/class-distribution/defect-ratio numbers should
-route detections through TomatoSession, not call save_detection() directly
-per frame.
+finalizes -- not once per frame. The old streamlit_app_new.py live-stream tab
+(removed 2026-08-01) did NOT have this behaviour: it called save_detection()
+on every processed frame with no tracking, so one tomato held in front of the
+camera for a few seconds logged as dozens of duplicate rows and inflated
+every KPI. Anything that wants accurate throughput/class-distribution/
+defect-ratio numbers should route detections through TomatoSession, not call
+save_detection() directly per frame.
 """
 
 import heapq

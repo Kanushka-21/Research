@@ -72,13 +72,14 @@ conveyor_integration.py             Headless/OpenCV-window CLI runner on top of 
                                      — camera -> YOLOv8 -> conveyor_core.TomatoSession -> serial
                                      gate commands. Runs fully in SIMULATED mode with no hardware
                                      attached (safe to test vision/tracking logic today).
-dashboard_app.py                    Streamlit live dashboard — the "more complete" replacement
-                                     for streamlit_app_new.py's live-stream tab. Routes every
-                                     detection through conveyor_core.TomatoSession (one accurate
-                                     KPI log per tomato) instead of logging every processed frame,
-                                     and can optionally send real serial gate commands from the
-                                     same screen — one tab is both the sorting UI and the KPI
-                                     dashboard. Run: `streamlit run dashboard_app.py`.
+dashboard_app.py                    Streamlit live dashboard — current recommended tool, replaces
+                                     the old streamlit_app_new.py live-stream tab (removed
+                                     2026-08-01). Routes every detection through
+                                     conveyor_core.TomatoSession (one accurate KPI log per tomato)
+                                     instead of logging every processed frame, and can optionally
+                                     send real serial gate commands from the same screen — one tab
+                                     is both the sorting UI and the KPI dashboard.
+                                     Run: `streamlit run dashboard_app.py`.
 esp32_firmware/
   tomato_sorter_firmware.ino        ESP32: drives belt stepper (non-blocking) + listens for
                                      G/B/T/R serial commands to fire the matching gate servo
@@ -97,13 +98,6 @@ kaggle/kaggle_unified_5class.ipynb  Original Kaggle training notebook (v1, curre
                                      (moved 2026-07-31 from repo root into kaggle/, alongside its
                                      results, for a single consolidated Kaggle folder instead of
                                      the notebook living at root while its outputs sat under Output/)
-dashboard_app.py                    Live conveyor dashboard (see above) — current recommended
-                                     live-camera tool, replaces the old streamlit_app_new.py
-                                     live-stream tab
-streamlit_app_new.py                Older webcam/upload + KPI + plotly dashboard — kept for its
-                                     non-live tabs (upload/KPI), but live-stream use should go
-                                     through dashboard_app.py instead
-streamlit_ui.py                     Minimal single-image upload UI
 diagnostic_app.py                   Stripped-down tool for inspecting raw model detections
 
 Output/tomato_logs/tomato_detections.db      Legacy detection log DB, no longer written to since
@@ -113,10 +107,17 @@ tomato_detections.db                         Detection log DB used by the Stream
 
 **Removed 2026-07-31** (folder cleanup, see below): `newModel/` (dead-end second Kaggle run, 0-byte
 notebook, unreproducible — see original note preserved below), `streamlit_app_old.py` (already
-known-superseded), `fix_shelf_life.py` (one-off migration script, already run against
-streamlit_app_new.py, no longer needed), all four `realtime_classifier_*.py` variants (webcam
-inference scripts predating `conveyor_core.py`/`dashboard_app.py`, confirmed unimported anywhere
-in the codebase, superseded by the tracked TomatoSession pipeline).
+known-superseded), `fix_shelf_life.py` (one-off migration script, already run, no longer needed),
+all four `realtime_classifier_*.py` variants (webcam inference scripts predating
+`conveyor_core.py`/`dashboard_app.py`, confirmed unimported anywhere in the codebase, superseded by
+the tracked TomatoSession pipeline).
+
+**Removed 2026-08-01**: `streamlit_app_new.py` and `streamlit_ui.py`. Both had gone stale from the
+2026-07-31 Kaggle-folder move (hardcoded paths to `Output/kaggle/...`, one of which no longer
+existed at all) and were functionally redundant — `dashboard_app.py` already covers the live-camera
+and KPI-dashboard tabs, and `streamlit_ui.py` was a strict subset of `streamlit_app_new.py`'s
+single-photo-upload tab. Net effect: the standalone "upload one photo, no live camera" test path no
+longer exists; `dashboard_app.py`'s live camera is now the only test path.
 
 MODEL_CONFIG.md                     Deployed model card (v1): classes, metrics, file locations
 TRAINING_GRAPHS_EXPLANATION.md      How to read the training curves/confusion matrix (presentation aid)
@@ -180,16 +181,11 @@ Confirmed working versions on this machine: `torch==2.11.0+cu128`, `torchvision=
 can't be imported or the ESP32 isn't connected, so you can develop the vision/timing logic on a
 laptop with just a webcam.)
 
-**Dashboard (live camera, current recommended tool):**
+**Dashboard (live camera + KPI, the only Streamlit tool now — see removal note above):**
 ```bash
 streamlit run dashboard_app.py
 ```
 Open http://localhost:8501.
-
-**Dashboard (older webcam/upload + KPI tabs):**
-```bash
-streamlit run streamlit_app_new.py
-```
 
 **Full conveyor bridge (camera → gate commands), works with or without the ESP32 plugged in:**
 ```bash
@@ -210,7 +206,7 @@ streamlit run dashboard_app.py
 Leave "Send real serial commands to ESP32" unchecked to run in SIMULATED mode (no hardware
 needed) — logs `[SIMULATED] would fire ...` instead of writing to a serial port, so you can
 validate vision/tracking/KPI accuracy today. Every confirmed tomato (not every frame) logs one
-row to `tomato_detections.db`, the same DB `streamlit_app_new.py`'s KPI tab reads from.
+row to `tomato_detections.db`, which this same screen's KPI panel reads from.
 
 **Train a new model locally** (see §4 for why you should always audit first):
 ```bash
@@ -508,13 +504,16 @@ Sources: [arXiv:2403.07113](https://arxiv.org/pdf/2403.07113) ·
 ### Housekeeping
 - [x] Add a `requirements.txt` — done 2026-07-23, see §3 for the CUDA-index caveat
 - [x] Canonical detection-log DB path decided 2026-07-31: `tomato_detections.db` (repo root) is
-      current, used by `streamlit_app_new.py`, `database.py`, `conveyor_core.py`/`dashboard_app.py`.
+      current, used by `database.py` and `conveyor_core.py`/`dashboard_app.py`.
       `Output/tomato_logs/tomato_detections.db` is now legacy/read-only -- its only writer
       (`realtime_classifier_yolo_fast.py`) was removed the same day
 - [x] `streamlit_app_old.py`, `fix_shelf_life.py` (one-off, already run), and all four
       `realtime_classifier_*.py` variants removed 2026-07-31 -- confirmed unimported anywhere
-      first. `streamlit_app_new.py` kept for its non-live upload/KPI tabs, which `dashboard_app.py`
-      doesn't cover yet; still a candidate for a future consolidation pass
+      first
+- [x] `streamlit_app_new.py` and `streamlit_ui.py` removed 2026-08-01 -- both had gone stale from
+      the Kaggle-folder move (broken hardcoded paths) and were redundant with `dashboard_app.py`.
+      `dashboard_app.py` is now the only Streamlit tool in the repo; the standalone
+      single-photo-upload test path no longer exists (see removed-files note in §3)
 - [ ] Once `dashboard_app.py` has been run against the real camera at least once, fold any fixes
       back into `conveyor_core.py` so `conveyor_integration.py` benefits too
 - [x] `newModel/` — removed 2026-07-31 (unreproducible, see §4)
