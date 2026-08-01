@@ -13,6 +13,8 @@ instead of crashing, so you can validate the vision/timing/queueing logic on
 a laptop with just a webcam before any wiring exists.
 """
 
+import argparse
+
 import cv2
 import torch
 from ultralytics import YOLO
@@ -25,6 +27,7 @@ from conveyor_core import (
     CAMERA_TO_FIRST_GATE_CM,
     GATE_ORDER,
     GATE_DISTANCES_CM,
+    SERIAL_PORT,
     EventScheduler,
     SerialSender,
     TomatoSession,
@@ -33,10 +36,11 @@ from conveyor_core import (
 )
 
 
-def run():
+def run(live: bool = False):
     print("=" * 70)
     print("Conveyor vision-to-actuator bridge")
     print(f"Gate order (camera->end): {GATE_ORDER}  |  Defect: no gate, rides to end")
+    print(f"Mode: {'LIVE (will open ' + SERIAL_PORT + ' and fire real gates)' if live else 'SIMULATED (no serial port opened, no hardware will move)'}")
     print("=" * 70)
 
     if BELT_SPEED_CMS == 10.0 and CAMERA_TO_FIRST_GATE_CM == 20.0:
@@ -50,7 +54,7 @@ def run():
     model.to(device)
     print(f"[INIT] Model loaded on {device}")
 
-    sender = SerialSender()
+    sender = SerialSender(force_simulated=not live)
     scheduler = EventScheduler(sender)
     session = TomatoSession(scheduler, tab_source="conveyor")
 
@@ -113,4 +117,12 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(description="Camera -> YOLO -> conveyor actuation bridge")
+    parser.add_argument(
+        "--live", action="store_true",
+        help="Actually open the ESP32 serial port and fire real gates/belt commands. "
+             "Default is SIMULATED mode: vision + timing logic run normally, but gate "
+             "fires are only printed ('[SIMULATED] would fire ...'), nothing moves.",
+    )
+    args = parser.parse_args()
+    run(live=args.live)
