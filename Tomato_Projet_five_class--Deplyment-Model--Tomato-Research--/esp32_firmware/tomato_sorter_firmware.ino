@@ -3,13 +3,28 @@
  * ------------------------------
  * Two jobs running at the same time on the same ESP32:
  *   1. Keep the conveyor belt (NEMA23 stepper via DM542 driver) moving.
- *   2. Listen on Serial for one-letter commands from the PC (sent by
- *      conveyor_integration.py) and open the matching sorting gate.
+ *   2. Listen over BLUETOOTH for one-letter commands from the PC (sent by
+ *      conveyor_integration.py / conveyor_core.py's SerialSender) and open
+ *      the matching sorting gate.
  *
- * Serial protocol (matches conveyor_integration.py, 115200 baud):
+ * Commands now arrive over classic Bluetooth SPP (2026-08-01), not USB.
+ * USB Serial is still used, but only for debug prints on the Arduino IDE's
+ * Serial Monitor -- it no longer carries gate commands. See
+ * ESP32_BLUETOOTH_API.md (repo root) for the full pairing walkthrough,
+ * wiring diagram, and command protocol spec.
+ *
+ * Command protocol (matches microcontroller_config.py's SERIAL_COMMAND map):
  *   'G' = open green gate     'B' = open breaker gate
  *   'T' = open turning gate   'R' = open red gate
  *   (no letter is ever sent for "defect" - it just rides to the end, on purpose)
+ *
+ * Needs:
+ *   - "ESP32Servo" library (Arduino Library Manager - search "ESP32Servo" by
+ *     Kevin Harrington / madhephaestus)
+ *   - Classic Bluetooth support built into the ESP32 Arduino core
+ *     (BluetoothSerial.h, no separate install) -- only works on boards with
+ *     classic BT (original ESP32 WROOM/WROVER). ESP32-S2/C3/S3 do NOT have
+ *     classic Bluetooth and cannot run this firmware as-is.
  *
  * ---- WIRING (from your notes) ----
  * DM542 driver:
@@ -34,12 +49,21 @@
  *     servo "4" (red,     furthest from camera) -> ESP32 GPIO 14
  *   Double check this order matches how you physically installed them - if a servo
  *   fires for the wrong gate, swap the pin numbers below to match reality.
- *
- * Needs the "ESP32Servo" library (install via Arduino Library Manager - search
- * "ESP32Servo" by Kevin Harrington / madhephaestus).
  */
 
 #include <ESP32Servo.h>
+#include "BluetoothSerial.h"
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled -- pick "Tools > Partition Scheme" with BT enabled, or a board that supports classic Bluetooth.
+#endif
+
+// Name advertised over Bluetooth -- must exactly match BLUETOOTH_DEVICE_NAME
+// in microcontroller_config.py. Pair to this name from Windows Bluetooth
+// settings, then point SERIAL_PORT at the resulting COM port (see
+// ESP32_BLUETOOTH_API.md).
+const char *BT_DEVICE_NAME = "TomatoSorter";
+BluetoothSerial SerialBT;
 
 // ---------------- Belt (stepper) ----------------
 const int STEP_PIN = 18; // -> DM542 PUL-
@@ -49,7 +73,7 @@ const int DIR_PIN  = 19; // -> DM542 DIR-
 // Smaller number = faster belt. Each loop() toggles the pin once, and the
 // driver steps on every edge, so the real step rate is 1 / (2 * stepIntervalUs).
 // Tune this once you know how fast you want the belt to move, then update
-// BELT_SPEED_CMS in conveyor_integration.py to match the real measured speed.
+// BELT_SPEED_CMS in microcontroller_config.py to match the real measured speed.
 unsigned long stepIntervalUs = 800;
 unsigned long lastStepTime = 0;
 bool stepPinState = false;
@@ -76,7 +100,11 @@ unsigned long gateReturnAt[4] = {0, 0, 0, 0};
 bool gateIsOpen[4] = {false, false, false, false};
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200);  // USB debug prints only -- commands come over Bluetooth now
+  SerialBT.begin(BT_DEVICE_NAME);
+  Serial.print("Bluetooth SPP started as '");
+  Serial.print(BT_DEVICE_NAME);
+  Serial.println("' -- pair to it from Windows Bluetooth settings, then find its COM port.");
 
   pinMode(STEP_PIN, OUTPUT);
   pinMode(DIR_PIN, OUTPUT);
@@ -88,7 +116,7 @@ void setup() {
     gateServos[i].write(SERVO_HOME_ANGLE);
   }
 
-  Serial.println("Tomato sorter ready.");
+  Serial.println("Tomato sorter ready (commands over Bluetooth).");
 }
 
 void loop() {
@@ -110,14 +138,16 @@ void runBelt() {
   }
 }
 
-// Reads any letters waiting on Serial and opens the matching gate.
-// Unrecognized characters (stray newlines, etc.) are just ignored.
+// Reads any letters waiting on the Bluetooth SPP link and opens the matching
+// gate. Unrecognized characters (stray newlines, etc.) are just ignored.
 void handleSerialCommands() {
-  while (Serial.available() > 0) {
-    char c = Serial.read();
+  while (SerialBT.available() > 0) {
+    char c = SerialBT.read();
     for (int i = 0; i < 4; i++) {
       if (c == GATE_COMMANDS[i]) {
         openGate(i);
+        Serial.print("[BT] Gate fired: ");
+        Serial.println(GATE_COMMANDS[i]);
       }
     }
   }

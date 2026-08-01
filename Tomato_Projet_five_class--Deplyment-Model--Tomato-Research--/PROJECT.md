@@ -61,17 +61,24 @@ Breaker=29, Turning=24, Red=12, Defect=0 (`database.py::SHELF_LIFE`).
 
 ```
 database.py                        SQLite schema + SHELF_LIFE lookup table + KPI queries
+microcontroller_config.py          ESP32/Bluetooth hardware config (2026-08-01) — Bluetooth device
+                                     name + COM port, gate command letters, gate servo/belt GPIO
+                                     pins, belt speed + gate distance placeholders. Single source of
+                                     truth for anything ESP32-hardware related; conveyor_core.py
+                                     imports from here rather than defining its own copies.
 conveyor_core.py                    Shared tracking/classification/scheduling/serial engine:
                                      TomatoSession (IDLE/TRACKING state machine, one DB log per
                                      confirmed tomato, not per frame), finalize_classification
                                      (confidence-weighted vote + defect-priority override),
                                      EventScheduler (gate-fire timing), SerialSender (real ESP32
-                                     or SIMULATED fallback). Both entry points below import this
+                                     over Bluetooth SPP, or SIMULATED fallback — see
+                                     ESP32_BLUETOOTH_API.md). Both entry points below import this
                                      — change tracking/scheduling logic here once, not twice.
 conveyor_integration.py             Headless/OpenCV-window CLI runner on top of conveyor_core.py
                                      — camera -> YOLOv8 -> conveyor_core.TomatoSession -> serial
-                                     gate commands. Runs fully in SIMULATED mode with no hardware
-                                     attached (safe to test vision/tracking logic today).
+                                     gate commands. SIMULATED by default (no hardware attached,
+                                     safe to test vision/tracking logic); pass `--live` to actually
+                                     open the Bluetooth link and fire real gates.
 dashboard_app.py                    Streamlit live dashboard — current recommended tool, replaces
                                      the old streamlit_app_new.py live-stream tab (removed
                                      2026-08-01). Routes every detection through
@@ -81,8 +88,10 @@ dashboard_app.py                    Streamlit live dashboard — current recomme
                                      is both the sorting UI and the KPI dashboard.
                                      Run: `streamlit run dashboard_app.py`.
 esp32_firmware/
-  tomato_sorter_firmware.ino        ESP32: drives belt stepper (non-blocking) + listens for
-                                     G/B/T/R serial commands to fire the matching gate servo
+  tomato_sorter_firmware.ino        ESP32: drives belt stepper (non-blocking) + listens over
+                                     Bluetooth SPP (2026-08-01, was USB serial) for G/B/T/R
+                                     commands to fire the matching gate servo. USB Serial is still
+                                     used, but for debug prints only now. See ESP32_BLUETOOTH_API.md.
 
 train_local.py                     Local YOLOv8m training script, rewritten from the Kaggle
                                      notebook. Includes a dataset AUDIT (run with --audit-only)
@@ -178,8 +187,8 @@ Confirmed working versions on this machine: `torch==2.11.0+cu128`, `torchvision=
 `ultralytics==8.4.104`.
 
 (`pyserial` is optional — `conveyor_integration.py` falls back to a simulated/logging mode if it
-can't be imported or the ESP32 isn't connected, so you can develop the vision/timing logic on a
-laptop with just a webcam.)
+can't be imported or the ESP32 isn't connected over Bluetooth, so you can develop the
+vision/timing logic on a laptop with just a webcam. See ESP32_BLUETOOTH_API.md for pairing.)
 
 **Dashboard (live camera + KPI, the only Streamlit tool now — see removal note above):**
 ```bash
@@ -187,12 +196,13 @@ streamlit run dashboard_app.py
 ```
 Open http://localhost:8501.
 
-**Full conveyor bridge (camera → gate commands), works with or without the ESP32 plugged in:**
+**Full conveyor bridge (camera → gate commands), works with or without the ESP32 paired:**
 ```bash
-python conveyor_integration.py
+python conveyor_integration.py            # SIMULATED (default) -- no serial port opened, safe
+python conveyor_integration.py --live     # opens the paired Bluetooth link, fires real gates
 ```
-If no ESP32 is on `COM3`, it prints `[SIMULATED] would fire ...` instead of erroring — use this
-to validate detection/timing logic before any wiring exists.
+Without `--live`, it always prints `[SIMULATED] would fire ...` instead of erroring — use this
+to validate detection/timing logic before any wiring or pairing exists.
 
 **Diagnostic tool (inspect raw detections, no dashboard chrome):**
 ```bash
@@ -204,7 +214,7 @@ streamlit run diagnostic_app.py
 streamlit run dashboard_app.py
 ```
 Leave "Send real serial commands to ESP32" unchecked to run in SIMULATED mode (no hardware
-needed) — logs `[SIMULATED] would fire ...` instead of writing to a serial port, so you can
+needed) — logs `[SIMULATED] would fire ...` instead of writing to the Bluetooth link, so you can
 validate vision/tracking/KPI accuracy today. Every confirmed tomato (not every frame) logs one
 row to `tomato_detections.db`, which this same screen's KPI panel reads from.
 
@@ -216,8 +226,10 @@ python train_local.py --data "C:\path\to\roboflow_export\data.yaml"
 ```
 
 **ESP32 firmware**: open `esp32_firmware/tomato_sorter_firmware.ino` in the Arduino IDE, install
-the `ESP32Servo` library (search by Kevin Harrington / madhephaestus), review the wiring notes at
-the top of the file, flash it. **Not yet tested on real hardware** — see §5.
+the `ESP32Servo` library (search by Kevin Harrington / madhephaestus — classic Bluetooth support
+is already built into the ESP32 core, nothing extra to install for that), review the wiring notes
+at the top of the file, flash it, then pair it over Bluetooth (see ESP32_BLUETOOTH_API.md for the
+full walkthrough). **Not yet tested on real hardware** — see §5.
 
 ---
 
@@ -338,14 +350,20 @@ belt drive confirmed working. Camera and 4x MG995 gate servos are physically ins
 - `conveyor_integration.py` — FIFO event-scheduler: classifies each tracked tomato via
   confidence-weighted majority vote (with an explicit defect-priority override — a sufficiently
   confident defect vote wins regardless of the ripeness majority), schedules one gate-fire event
-  at `camera_exit_time + travel_time`, sends it over serial (or logs a simulated line if no ESP32
-  is connected).
+  at `camera_exit_time + travel_time`, sends it over the Bluetooth link (or logs a simulated line
+  if no ESP32 is connected, or if `--live` isn't passed — SIMULATED is now the default).
 - `esp32_firmware/tomato_sorter_firmware.ino` — drives the belt continuously and non-blocking,
-  listens for single-char `G`/`B`/`T`/`R` commands to swing the matching servo open then
-  auto-return after 1.2s.
+  listens over Bluetooth SPP for single-char `G`/`B`/`T`/`R` commands to swing the matching servo
+  open then auto-return after 1.2s. USB Serial is debug-prints-only now.
+
+**Changed 2026-08-01**: the PC↔ESP32 link moved from wired USB to wireless Bluetooth (classic
+SPP, appears to Windows as a normal virtual COM port, so `pyserial` code is unchanged). Hardware
+config (Bluetooth device name/COM port, gate pins, belt/gate distance placeholders) was pulled out
+into its own `microcontroller_config.py`, separate from `conveyor_core.py`'s vision/model config.
+Full pairing walkthrough + command protocol spec: `ESP32_BLUETOOTH_API.md`.
 
 **Blocking placeholders that must be measured on the real rig before trusting sort timing**:
-- `BELT_SPEED_CMS`, `CAMERA_TO_FIRST_GATE_CM`, `GATE_SPACING_CM` in `conveyor_integration.py`
+- `BELT_SPEED_CMS`, `CAMERA_TO_FIRST_GATE_CM`, `GATE_SPACING_CM` in `microcontroller_config.py`
 - `stepIntervalUs` (actual step rate ↔ belt speed) in the firmware
 - `DIR_FORWARD` — which signal level actually drives the belt toward the gates (untested)
 - `SERVO_HOME_ANGLE` / `SERVO_OPEN_ANGLE` — actual angles that open/close each physical gate
@@ -473,17 +491,20 @@ Sources: [arXiv:2403.07113](https://arxiv.org/pdf/2403.07113) ·
       tomato (via `conveyor_core.TomatoSession`) instead of one per frame, and can optionally send
       real serial gate commands from the same screen — done 2026-07-23, **not yet run** (blocked
       on the Python environment gap above)
+- [x] Move the PC↔ESP32 link from wired USB to wireless Bluetooth (classic SPP); split hardware
+      config out into `microcontroller_config.py`; write `ESP32_BLUETOOTH_API.md` (pairing
+      walkthrough + command protocol spec for firmware programmers) — done 2026-08-01
 - [ ] Measure real belt speed (`BELT_SPEED_CMS` / `stepIntervalUs`) and update both
-      `conveyor_core.py` and the firmware to match
+      `microcontroller_config.py` and the firmware to match
 - [ ] Measure real camera-to-first-gate and gate-to-gate distances (`CAMERA_TO_FIRST_GATE_CM`,
-      `GATE_SPACING_CM`) in `conveyor_core.py`
+      `GATE_SPACING_CM`) in `microcontroller_config.py`
 - [ ] Confirm `DIR_FORWARD` drives the belt the correct direction; flip if backwards
 - [ ] Tune `SERVO_HOME_ANGLE` / `SERVO_OPEN_ANGLE` per gate to match the actual mechanism
-- [ ] Flash the firmware to the ESP32 and do a first end-to-end dry run (fake/manual tomato
-      pushes) before trusting it with live camera input
-- [ ] Once timing is trustworthy, run `conveyor_integration.py` or `dashboard_app.py` (with "Send
-      real serial commands" checked) against the real belt and measure actuator response time +
-      sorting success rate (M7 metrics)
+- [ ] Flash the firmware to the ESP32, pair it over Bluetooth (see ESP32_BLUETOOTH_API.md), and do
+      a first end-to-end dry run (fake/manual tomato pushes) before trusting it with live camera input
+- [ ] Once timing is trustworthy, run `conveyor_integration.py --live` or `dashboard_app.py` (with
+      "Send real serial commands" checked) against the real belt and measure actuator response
+      time + sorting success rate (M7 metrics)
 - [ ] Add the IR/proximity sensor (currently planned but not installed) if camera-only timing
       proves unreliable
 

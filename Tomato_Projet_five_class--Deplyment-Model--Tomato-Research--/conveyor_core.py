@@ -21,10 +21,12 @@ Design (confirmed with the team, 2026-07-23):
     GATE_DISTANCES_CM below are PLACEHOLDERS. Measure them on the real rig
     before trusting this for actual sorting.
 
-Fully testable today without any hardware: if the ESP32 serial port can't be
-opened, SerialSender falls back to logging "[SIMULATED] would fire ..." lines
-instead of crashing, so you can validate the vision/timing/queueing logic on
-a laptop with just a webcam before any wiring exists.
+Fully testable today without any hardware: if the ESP32's Bluetooth SPP link
+can't be opened, SerialSender falls back to logging "[SIMULATED] would fire
+..." lines instead of crashing, so you can validate the vision/timing/queueing
+logic on a laptop with just a webcam before any wiring or pairing exists.
+See microcontroller_config.py for the Bluetooth/pin config and
+ESP32_BLUETOOTH_API.md for the pairing walkthrough + command protocol spec.
 
 Each confirmed tomato is logged to the DB exactly ONCE, when its track
 finalizes -- not once per frame. The old streamlit_app_new.py live-stream tab
@@ -43,6 +45,17 @@ from collections import defaultdict
 from pathlib import Path
 
 from database import save_detection, SHELF_LIFE
+from microcontroller_config import (
+    BELT_SPEED_CMS,
+    CAMERA_TO_FIRST_GATE_CM,
+    GATE_SPACING_CM,
+    GATE_ORDER,
+    GATE_DISTANCES_CM,
+    SERIAL_COMMAND,
+    SERIAL_PORT,
+    SERIAL_BAUD,
+    SERIAL_RESET_WAIT_S,
+)
 
 # ==================== CONFIG ====================
 MODEL_PATH = r"runs_local/tomato_5class_v6_balanced/weights/best.pt"  # retrained 2026-07-29 on cleaned+balanced defect data, see tomato-defect-domain-confound memory
@@ -75,25 +88,10 @@ def list_available_models():
     models.sort(key=lambda m: m["mtime"], reverse=True)
     return models
 
-# --- TODO: measure these on the real rig before trusting this for actual sorting ---
-BELT_SPEED_CMS = 10.0  # cm/second -- PLACEHOLDER, measure or back-calculate from stepper step rate
-CAMERA_TO_FIRST_GATE_CM = 20.0  # PLACEHOLDER
-GATE_SPACING_CM = 15.0  # PLACEHOLDER -- distance between consecutive gates, if evenly spaced
-# -------------------------------------------------------------------------------
-
-# Physical gate order, closest to camera first (confirmed 2026-07-23)
-GATE_ORDER = ["green", "breaker", "turning", "red"]
-GATE_DISTANCES_CM = {
-    cls: CAMERA_TO_FIRST_GATE_CM + i * GATE_SPACING_CM
-    for i, cls in enumerate(GATE_ORDER)
-}
-# No entry for "defect" -- intentional, see module docstring.
-
-# One ASCII char per gate class, newline-terminated. Kept deliberately simple
-# so it's debuggable by eye in the Arduino/ESP32 serial monitor.
-SERIAL_COMMAND = {"green": "G", "breaker": "B", "turning": "T", "red": "R"}
-SERIAL_PORT = "COM3"  # adjust to your ESP32's port
-SERIAL_BAUD = 115200
+# BELT_SPEED_CMS, GATE_ORDER, GATE_DISTANCES_CM, SERIAL_COMMAND, SERIAL_PORT,
+# SERIAL_BAUD etc. now live in microcontroller_config.py (imported above) --
+# that's the single source of truth for anything ESP32/Bluetooth-hardware
+# related, kept separate from this file's vision/model config.
 
 # Tracking state machine tuning
 EXIT_GRACE_FRAMES = 3          # consecutive empty frames before declaring "tomato has left view"
@@ -186,8 +184,13 @@ def is_distractor_box(box_xyxy, distractor_boxes):
 
 
 class SerialSender:
-    """Sends one command per confirmed tomato. Falls back to logging if no
-    ESP32 is connected, so the rest of the pipeline is testable without hardware."""
+    """Sends one command per confirmed tomato over the paired Bluetooth SPP
+    link to the ESP32 (see microcontroller_config.py / ESP32_BLUETOOTH_API.md).
+    Windows exposes a paired Bluetooth SPP device as an ordinary virtual COM
+    port, so this is unchanged pyserial code either way -- point SERIAL_PORT
+    at a USB COM port instead and it works the same, no code change needed.
+    Falls back to logging if nothing is connected, so the rest of the
+    pipeline is testable without any hardware at all."""
 
     def __init__(self, port=SERIAL_PORT, baud=SERIAL_BAUD, force_simulated=False):
         self.available = False
@@ -197,9 +200,9 @@ class SerialSender:
         try:
             import serial  # pyserial
             self.conn = serial.Serial(port, baud, timeout=1)
-            time.sleep(2)  # let the ESP32 finish its reset-on-connect
+            time.sleep(SERIAL_RESET_WAIT_S)  # let the ESP32/link settle before trusting it
             self.available = True
-            print(f"[SERIAL] Connected to {port} @ {baud} baud")
+            print(f"[SERIAL] Connected to {port} @ {baud} baud (Bluetooth SPP)")
         except Exception as e:
             print(f"[SERIAL] Not connected ({e}) -- running in SIMULATED mode, no hardware required")
 

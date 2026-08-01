@@ -1,0 +1,4 @@
+Sensor Pair	Average Time
+IR1 → IR3	2.83 s
+IR3 → IR2	2.92 s
+IR4 → IR3	2.81 s
