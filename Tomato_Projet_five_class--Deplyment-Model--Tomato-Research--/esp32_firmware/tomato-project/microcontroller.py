@@ -144,17 +144,28 @@ class MicroController:
 
     def _serial_reader(self):
         """Background thread: reads every JSON line from the ESP32 and
-        reacts to IR1..IR4 sensor events. Runs for the lifetime of the
-        program."""
+        reacts to IR1..IR4 sensor events. Runs until shutdown() closes the
+        port, at which point readline() raises and we exit quietly instead
+        of dumping a traceback for what is actually a normal exit."""
         while True:
-            line = self.ser.readline().decode("utf-8", errors="ignore").strip()
+            try:
+                line = self.ser.readline().decode("utf-8", errors="ignore").strip()
+            except serial.SerialException:
+                return  # port closed by shutdown() -- expected, not an error
             if not line:
                 continue
 
             try:
                 data = json.loads(line)
             except json.JSONDecodeError:
-                print(f"[RX] (not JSON, ignored) {line}")
+                # ESP32 debug prints (main.cpp's Serial.printf calls) share this
+                # same USB wire and land here as non-JSON lines -- genuinely meant
+                # to be ignored, not printed. Printing every one of them flooded
+                # the console while typing at app.py's input() prompt, which on
+                # Windows corrupted/ate keystrokes (confirmed 2026-08-10: an
+                # entire test session had zero successful detect() calls despite
+                # the user typing repeatedly -- root cause was this noise, not
+                # bad input).
                 continue
 
             command = data.get("command")

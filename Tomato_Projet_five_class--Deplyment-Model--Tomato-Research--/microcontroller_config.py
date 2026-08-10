@@ -29,11 +29,10 @@ classic Bluetooth and cannot run the firmware as-is.
 # BT_DEVICE_NAME the firmware passes to SerialBT.begin(...).
 BLUETOOTH_DEVICE_NAME = "TomatoSorter"
 
-# Windows-assigned virtual COM port for the paired Bluetooth SPP link.
-# Find it: Settings -> Bluetooth & devices -> Devices -> TomatoSorter -> "..."
-# -> More Bluetooth options -> COM Ports tab -> the "Outgoing" port number.
-# PLACEHOLDER until you pair the device -- see ESP32_BLUETOOTH_API.md.
-SERIAL_PORT = "COM6"
+# COM port for the ESP32 link. Works the same whether it's a wired USB port
+# or a paired Bluetooth SPP virtual port -- pyserial treats both identically.
+# Currently set to COM5 (USB) -- 2026-08-10 test run.
+SERIAL_PORT = "COM5"
 
 # Classic Bluetooth SPP doesn't actually use a baud rate (it's framed over
 # the radio link, not a UART), but pyserial's API still wants a value, and
