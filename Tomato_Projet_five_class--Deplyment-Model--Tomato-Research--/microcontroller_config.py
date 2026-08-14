@@ -31,7 +31,9 @@ BLUETOOTH_DEVICE_NAME = "TomatoSorter"
 
 # COM port for the ESP32 link. Works the same whether it's a wired USB port
 # or a paired Bluetooth SPP virtual port -- pyserial treats both identically.
-# Currently set to COM5 (USB) -- 2026-08-10 test run.
+# Currently COM5 -- confirmed 2026-08-14 as the Bluetooth SPP port for the
+# paired "TomatoSorter" device (matched via its Bluetooth MAC in Windows'
+# paired-device list, not the old USB COM5 from the 2026-08-10 test run).
 SERIAL_PORT = "COM5"
 
 # Classic Bluetooth SPP doesn't actually use a baud rate (it's framed over
