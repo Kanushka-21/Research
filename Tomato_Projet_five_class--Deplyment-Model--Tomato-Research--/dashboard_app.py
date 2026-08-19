@@ -1,6 +1,8 @@
 """
-Live conveyor dashboard: USB camera -> YOLOv8 -> per-tomato tracking -> gate
-actuation (real or simulated) -> accurate KPI display, all in one screen.
+Live conveyor dashboard: USB camera -> YOLOv8 -> per-tomato tracking ->
+accurate KPI display, all in one screen. Vision/KPI only -- this dashboard
+does not talk to the ESP32 over serial/Bluetooth (that lives in
+conveyor_integration.py's physical sorting bridge instead).
 
 This is the "more complete" replacement for the ad-hoc live-stream tab that
 used to live in streamlit_app_new.py (removed 2026-08-01 -- it called
@@ -14,18 +16,15 @@ This app routes every detection through conveyor_core.TomatoSession instead,
 which is the same tracking/classification engine conveyor_integration.py uses
 for the physical sorting bridge (IDLE/TRACKING state machine, confidence-
 weighted majority vote across a tomato's tracked frames, explicit defect-
-priority override). One DB row per confirmed tomato, not per frame -- and the
-same gate-scheduling logic that fires the ESP32 servo commands runs in this
-screen too, so a single Streamlit tab is both the sorting UI and the KPI
-dashboard (no separate OpenCV window needed).
+priority override). One DB row per confirmed tomato, not per frame.
 
 Usage:
     streamlit run dashboard_app.py
 """
 
-import re
-import threading
+import logging
 import time
+import warnings
 
 import cv2
 import streamlit as st
@@ -37,6 +36,19 @@ from datetime import datetime
 from pathlib import Path
 
 import microcontroller_config
+from bluetooth_sender import Bluetooth
+
+# Set to False to see Streamlit/library warnings (e.g. the
+# "use_container_width will be removed" deprecation notice) again while
+# debugging a library issue -- True keeps the console clean so only this
+# project's own print() output (object_identified(), [CLASSIFY], [SCHEDULE],
+# [SERIAL] etc.) shows up.
+HIDE_LIBRARY_LOGS = True
+if HIDE_LIBRARY_LOGS:
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    logging.getLogger("streamlit").setLevel(logging.ERROR)
+
 from conveyor_core import (
     MODEL_PATH,
     CONFIDENCE_THRESHOLD,
@@ -47,8 +59,6 @@ from conveyor_core import (
     EventScheduler,
     SerialSender,
     TomatoSession,
-    get_distractor_boxes,
-    is_distractor_box,
     list_available_models,
 )
 from database import get_statistics
@@ -68,147 +78,85 @@ CLASS_COLORS_HEX = {
     "defect": "#808080",
 }
 
-# Default class -> command text for the direct serial path below, editable per
-# session from the dashboard (see "Class -> ESP32 command mapping" expander).
-DEFAULT_CLASS_COMMANDS = {
-    "green": "class1",
-    "breaker": "class2",
-    "turning": "class3",
-    "red": "class4",
-    "defect": "noclass",
-}
+ 
+
+def object_identified(class_name: str) -> None:
+    """Called once per confirmed tomato, right after the model's class is
+    finalized (i.e. TomatoSession's tracker has settled on a class, not per
+    raw per-frame detection)."""
+    command = ""
+    if(class_name == "green"): 
+        command = "class1"
+    if(class_name == "breaker"):
+        command = "class2"
+    if(class_name == "turning"):
+        command = "class3"
+    if(class_name == "red"):
+        command = "class4"
+    if(class_name == "defect"):
+        command = "noclass"
+    print(f"[CLASSIFY] Tomato classified as {class_name.upper()} -> sending command '{command}' to ESP32")
+
+    bluetooth.send_serial_commands(command)
+    
+    
 
 
-class DirectClassSerialSender:
-    """Opens a direct serial/Bluetooth-SPP link and sends one plain-text class
-    command per confirmed tomato (e.g. 'class1\\n'), the moment it's classified.
+def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCapture":
+    """Opens the webcam, retrying a few times before giving up.
 
-    This is the tomato_V2/test.py protocol -- separate from conveyor_core.
-    SerialSender's gate-timed G/B/T/R protocol, which conveyor_integration.py's
-    physical sorting bridge still uses. Kept dashboard-local so this doesn't
-    change behavior anywhere else. Falls back to logging if the port can't be
-    opened, same fallback philosophy as SerialSender."""
-
-    def __init__(self, port: str, baud: int):
-        self.available = False
-        self.conn = None
-        try:
-            import serial  # pyserial
-            # Short read timeout, not the connect-settle 1s SerialSender uses --
-            # tomato_V2's Machine::classify() replies with a "tomato queue -> ..."
-            # line over the same link on every classify() call (see reportQueueState()
-            # in tomato_V2/lib/Machine/Machine.cpp), and this read happens once per
-            # confirmed tomato inside the live video loop, so it must not stall the feed.
-            self.conn = serial.Serial(port, baud, timeout=0.5)
-            time.sleep(microcontroller_config.SERIAL_RESET_WAIT_S)
-            self.available = True
-            print(f"[SERIAL] (dashboard direct) Connected to {port} @ {baud} baud")
-        except Exception as e:
-            print(f"[SERIAL] (dashboard direct) Not connected ({e}) -- SIMULATED, no hardware required")
-
-    def send(self, command: str) -> str:
-        """Writes one command line and waits briefly for tomato_V2's queue-state
-        reply, e.g. "tomato queue -> gate4:[] gate3:[] gate2:[1] gate1:[] ".
-        Returns that reply (or "" if nothing came back in time)."""
-        command = command.strip()
-        if not command:
-            return ""
-        if self.available:
-            self.conn.reset_input_buffer()
-            self.conn.write((command + "\n").encode("ascii"))
-            reply = self.conn.readline().decode(errors="replace").strip()
-            print(f"[SERIAL] (dashboard direct) Sent '{command}'" + (f" -> {reply}" if reply else ""))
-            return reply
-        else:
-            print(f"[SIMULATED] (dashboard direct) Would send '{command}'")
-            return ""
-
-    def close(self):
-        if self.conn is not None:
-            self.conn.close()
+    On this machine a cold DSHOW open sometimes fails until something else
+    (e.g. the Windows Camera app) has first woken the sensor -- retrying a
+    couple of times a beat apart reproduces that same wake-up without
+    needing the user to open another app first."""
+    for attempt in range(attempts):
+        cap = cv2.VideoCapture(0)
+        time.sleep(0.5)
+        if cap.isOpened():
+            try:
+                if cap.read()[0]:
+                    return cap
+            except cv2.error:
+                pass
+        cap.release()
+        if attempt < attempts - 1:
+            time.sleep(retry_delay_s)
+    return cap
 
 
-def _persist_serial_config(port: str, baud: int) -> bool:
-    """Rewrites SERIAL_PORT / SERIAL_BAUD in microcontroller_config.py so a
-    port/baud chosen on the dashboard becomes the default for next run too.
-    Only touches those two lines -- everything else (gate protocol, GPIO
-    pins, belt placeholders) is left alone. Returns True if it changed."""
-    config_path = Path(__file__).resolve().parent / "microcontroller_config.py"
-    text = config_path.read_text(encoding="utf-8")
-    new_text = re.sub(r'(?m)^SERIAL_PORT = .*$', f'SERIAL_PORT = "{port}"', text)
-    new_text = re.sub(r'(?m)^SERIAL_BAUD = .*$', f'SERIAL_BAUD = {baud}', new_text)
-    if new_text != text:
-        config_path.write_text(new_text, encoding="utf-8")
-        return True
-    return False
+@st.cache_resource(show_spinner="Loading model...")
+def _load_model(model_path: str, device: str) -> YOLO:
+    """Cached so clicking Start again doesn't reload the checkpoint from disk
+    every time -- only reloads when the selected model path or device changes."""
+    model = YOLO(model_path)
+    model.to(device)
+    return model
 
 
-ESP32_CONSOLE_LOG_MAX = 200  # keep the manual console's on-screen log from growing unbounded
-
-
-def _send_manual_command():
-    """Button on_click for the manual ESP32 console -- sends whatever's typed
-    in the "Command" box as-is (any tomato_V2 command: 'class1', 'ang ...',
-    'set ...', 'get ...'), not just the class1-4/noclass mapping used by the
-    live camera loop above."""
-    sender = st.session_state.get("esp32_sender")
-    if sender is None:
-        return
-    cmd = st.session_state.get("manual_command_input", "").strip()
-    if not cmd:
-        return
-    with st.session_state.esp32_conn_lock:
-        reply = sender.send(cmd)
-    now = datetime.now().strftime("%H:%M:%S")
-    st.session_state.esp32_console_log.append({"time": now, "dir": "TX", "line": cmd})
-    if reply:
-        st.session_state.esp32_console_log.append({"time": now, "dir": "RX", "line": reply})
-    st.session_state.esp32_console_log = st.session_state.esp32_console_log[-ESP32_CONSOLE_LOG_MAX:]
-    st.session_state.manual_command_input = ""  # clear the box -- safe here, inside a callback
-
-
-@st.fragment(run_every="1s")
-def render_esp32_monitor():
-    """Live view of the manual console's connection: polls for any bytes the
-    ESP32 sent unprompted (e.g. Machine::reportQueueState() firing off an IR
-    sensor edge, not just a reply to something we sent) and shows the running
-    TX/RX log. Ticks on its own timer instead of the whole page rerunning."""
-    sender = st.session_state.get("esp32_sender")
-    if sender is not None and sender.available:
-        try:
-            with st.session_state.esp32_conn_lock:
-                for _ in range(20):  # bounded -- a flood of lines can't stall this fragment
-                    if not sender.conn.in_waiting:
-                        break
-                    raw = sender.conn.readline()
-                    if not raw:
-                        break
-                    text = raw.decode(errors="replace").strip()
-                    if text:
-                        st.session_state.esp32_console_log.append(
-                            {"time": datetime.now().strftime("%H:%M:%S"), "dir": "RX", "line": text}
-                        )
-            st.session_state.esp32_console_log = st.session_state.esp32_console_log[-ESP32_CONSOLE_LOG_MAX:]
-        except Exception:
-            pass  # port most likely closed between polls -- Disconnect already handles that path
-
-    st.markdown("**Traffic (TX = sent, RX = from ESP32)**")
-    if st.session_state.esp32_console_log:
-        st.dataframe(
-            [{"Time": e["time"], "Dir": e["dir"], "Line": e["line"]}
-             for e in reversed(st.session_state.esp32_console_log)],
-            width="stretch", hide_index=True, height=250,
-        )
-    else:
-        st.caption("No traffic yet.")
+@st.cache_resource(show_spinner=f"Connecting to '{microcontroller_config.BLUETOOTH_DEVICE_NAME}' over Bluetooth...")
+def _connect_bluetooth():
+    """Cached process-wide (like _load_model above) so Bluetooth.__init__'s
+    port-scan/probe (can take several seconds, see bluetooth_sender.py) only
+    runs once per app process, not on every Streamlit rerun. Returns
+    (Bluetooth instance or None, error message or None)."""
+    try:
+        bt = Bluetooth()
+    except Exception as e:
+        return None, str(e)
+    if not bt.connected:
+        return None, f"'{bt.device_name}' not found among paired Bluetooth devices."
+    return bt, None
 
 
 st.set_page_config(page_title="Conveyor Sorting Dashboard", layout="wide")
 st.title("Tomato Conveyor Sorting Dashboard")
 st.caption(
-    "Camera -> YOLOv8 -> tracked classification -> gate command (real ESP32 or simulated) "
-    "-> one KPI log per tomato, not per frame."
+    "Camera -> YOLOv8 -> tracked classification -> one KPI log per tomato, not per frame."
 )
+
+bluetooth, bluetooth_error = _connect_bluetooth()
+if bluetooth_error:
+    st.error(f"Bluetooth: {bluetooth_error}")
 
 if BELT_SPEED_CMS == 10.0 and CAMERA_TO_FIRST_GATE_CM == 20.0:
     st.warning(
@@ -226,16 +174,6 @@ if "session_class_counts" not in st.session_state:
     st.session_state.session_class_counts = {c: 0 for c in list(CLASS_COLORS_HEX)}
 if "last_classified" not in st.session_state:
     st.session_state.last_classified = None
-if "serial_log" not in st.session_state:
-    st.session_state.serial_log = []
-if "esp32_sender" not in st.session_state:
-    st.session_state.esp32_sender = None  # DirectClassSerialSender for the manual console, separate from the camera loop's
-if "esp32_conn_lock" not in st.session_state:
-    st.session_state.esp32_conn_lock = threading.Lock()  # guards esp32_sender.conn: manual Send vs the monitor fragment's poll
-if "esp32_console_log" not in st.session_state:
-    st.session_state.esp32_console_log = []
-
-SERIAL_LOG_MAX = 20  # keep the on-screen log from growing unbounded over a long session
 
 # ==================== CONTROLS ====================
 col_settings, col_controls = st.columns([1, 1])
@@ -269,128 +207,21 @@ with col_settings:
         help="Per-frame detection threshold fed into the tracker. F1-optimal point from "
              "training analysis is ~0.45.",
     )
-    use_real_serial = st.checkbox(
-        "Send real serial commands to ESP32", value=False,
-        help="Unchecked = SIMULATED mode (logs '[SIMULATED] would send ...' instead of writing "
-             "to a serial port). Checked = sends one plain-text class command per confirmed "
-             "tomato ('class1' / 'class2' / 'class3' / 'class4' / 'noclass'), immediately when "
-             "it's classified -- the tomato_V2/test.py protocol, not the gate-timed G/B/T/R "
-             "protocol used elsewhere in this project.",
-    )
-    if use_real_serial:
-        port_col, baud_col = st.columns(2)
-        serial_port = port_col.text_input(
-            "COM port", value=microcontroller_config.SERIAL_PORT, key="serial_port_input",
-            help="Saved to microcontroller_config.py as the new default when you click Start.",
-        )
-        serial_baud = baud_col.number_input(
-            "Baud", value=int(microcontroller_config.SERIAL_BAUD), step=1200, key="serial_baud_input",
-        )
-        if st.button("Check ESP32 connection", use_container_width=True, key="test_esp32_btn"):
-            with st.spinner(f"Opening {serial_port} @ {int(serial_baud)}..."):
-                test_sender = DirectClassSerialSender(serial_port, int(serial_baud))
-                if not test_sender.available:
-                    st.error(
-                        f"Could not open {serial_port} @ {int(serial_baud)}. Check the port name and "
-                        f"that the ESP32 is powered on and paired (Windows Bluetooth settings)."
-                    )
-                else:
-                    reply = test_sender.send("noclass")  # harmless no-op probe -- fires no gate
-                    test_sender.close()
-                    if reply:
-                        st.success(f"Connected to {serial_port} @ {int(serial_baud)} -- ESP32 replied: {reply}")
-                    else:
-                        st.warning(
-                            f"Opened {serial_port} @ {int(serial_baud)}, but the ESP32 didn't reply. "
-                            f"Port exists but nothing is answering -- check the board is powered and running "
-                            f"the tomato_V2 firmware."
-                        )
-        with st.expander("Class -> ESP32 command mapping", expanded=False):
-            st.caption("Sent as plain text + newline, e.g. 'class1\\n', immediately when a tomato's class is confirmed.")
-            class_commands = {
-                cls_name: st.text_input(
-                    cls_name.title(), value=DEFAULT_CLASS_COMMANDS.get(cls_name, cls_name),
-                    key=f"class_cmd_{cls_name}",
-                )
-                for cls_name in CLASS_COLORS_HEX
-            }
-    else:
-        serial_port = microcontroller_config.SERIAL_PORT
-        serial_baud = microcontroller_config.SERIAL_BAUD
-        class_commands = dict(DEFAULT_CLASS_COMMANDS)
-    filter_non_tomato = st.checkbox(
-        "Filter out non-tomato objects (COCO check)", value=True,
-        help="Runs a second, general-purpose object detector alongside the tomato model and "
-             "drops any tomato-model box that overlaps a confident detection of a known "
-             "non-tomato object (bottle, phone, cup, etc). Uncheck to compare behavior without it.",
-    )
-
 with col_controls:
     st.subheader("Stream control")
-    if st.button("Test camera", use_container_width=True):
-        test_cap = cv2.VideoCapture(0)
-        time.sleep(1)
-        try:
-            ok = test_cap.isOpened() and test_cap.read()[0]
-        except cv2.error:
-            ok = False
+    if st.button("Test camera", width="stretch"):
+        test_cap = _open_camera()
+        ok = test_cap.isOpened()
         test_cap.release()
         st.success("Camera OK") if ok else st.error("Camera not found or can't read a frame.")
 
     start_col, stop_col = st.columns(2)
-    if start_col.button("Start", use_container_width=True, type="primary"):
+    if start_col.button("Start", width="stretch", type="primary"):
         st.session_state.streaming = True
-    if stop_col.button("Stop", use_container_width=True):
+    if stop_col.button("Stop", width="stretch"):
         st.session_state.streaming = False
 
 st.divider()
-
-esp32_console_exp = st.expander("ESP32 serial console (manual send + live monitor)", on_change="rerun")
-if esp32_console_exp.open:
-    with esp32_console_exp:
-        st.caption(
-            "Own connection, separate from the live camera's 'Send real serial commands' mode "
-            "above -- don't open both at once, they'll fight over the same COM port. Use this to "
-            "poke the ESP32 directly: any tomato_V2 command works, not just class1-4/noclass."
-        )
-        console_port_col, console_baud_col = st.columns(2)
-        console_port = console_port_col.text_input(
-            "COM port", value=microcontroller_config.SERIAL_PORT, key="console_port_input",
-        )
-        console_baud = console_baud_col.number_input(
-            "Baud", value=int(microcontroller_config.SERIAL_BAUD), step=1200, key="console_baud_input",
-        )
-
-        if st.session_state.esp32_sender is None:
-            if st.button("Connect", width="stretch", key="console_connect_btn"):
-                with st.spinner(f"Opening {console_port} @ {int(console_baud)}..."):
-                    sender = DirectClassSerialSender(console_port, int(console_baud))
-                if sender.available:
-                    st.session_state.esp32_sender = sender
-                else:
-                    st.error(
-                        f"Could not open {console_port} @ {int(console_baud)}. Check the port name "
-                        f"and that the ESP32 is powered on and paired."
-                    )
-        else:
-            if st.button("Disconnect", width="stretch", key="console_disconnect_btn"):
-                with st.session_state.esp32_conn_lock:
-                    st.session_state.esp32_sender.close()
-                st.session_state.esp32_sender = None
-
-        if st.session_state.esp32_sender is not None:
-            st.success(f"Connected to {console_port} @ {int(console_baud)} baud")
-
-            cmd_col, send_col = st.columns([5, 1])
-            cmd_col.text_input(
-                "Command", key="manual_command_input", label_visibility="collapsed",
-                placeholder="e.g. class1, ang 90 120 19 23, on 1 2, set gateOnAngle 90, get motor speed",
-            )
-            send_col.button("Send", width="stretch", key="manual_send_btn", on_click=_send_manual_command)
-
-            render_esp32_monitor()
-        else:
-            st.caption("Not connected.")
 
 col_video, col_live = st.columns([2, 1])
 with col_video:
@@ -430,14 +261,14 @@ def render_kpis(container):
                                           marker=dict(colors=colors, line=dict(color="#1f1f1f", width=2)),
                                           textinfo="label+percent+value")])
             fig.update_layout(height=350, margin=dict(t=10, b=10, l=10, r=10))
-            st.plotly_chart(fig, use_container_width=True, key=f"kpi_pie_{time.time_ns()}")
+            st.plotly_chart(fig, width="stretch", key=f"kpi_pie_{time.time_ns()}")
 
         if stats["recent"]:
             st.markdown("**Recent detections**")
             st.dataframe(
                 [{"ID": r[0], "Class": r[1], "Shelf life (d)": r[2], "Confidence": f"{r[3]:.0%}", "Time": r[4]}
                  for r in stats["recent"][:10]],
-                use_container_width=True, hide_index=True,
+                width="stretch", hide_index=True,
             )
 
 
@@ -449,8 +280,7 @@ if st.session_state.streaming:
     # one-off crash (see conveyor_core.py history), but MSMF couldn't open this webcam's driver
     # at all, while DSHOW works reliably. Reverted. The crash is treated as a rare device-
     # contention event (something else briefly holding the camera), not a backend defect.
-    cap = cv2.VideoCapture(0)
-    time.sleep(0.5)
+    cap = _open_camera()
     if not cap.isOpened():
         st.error("Camera not available. Close any other app/tab using it and click Start again.")
         st.session_state.streaming = False
@@ -492,39 +322,21 @@ if st.session_state.streaming:
         cap.set(cv2.CAP_PROP_AUTO_WB, 0)
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 = manual on most DirectShow/MSMF backends
 
-        model = YOLO(selected_model_path)
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        model.to(device)
+        model = _load_model(selected_model_path, device)
 
-        # This dashboard's real-hardware path is the class1/.../noclass protocol sent
-        # immediately on classify (DirectClassSerialSender below), not the gate-timed
-        # G/B/T/R protocol -- so this EventScheduler/SerialSender stays simulated-only
-        # here (also avoids two senders fighting over the same COM port).
+        # No hardware/serial link is driven from this dashboard -- vision +
+        # tracking + KPI logging only, so this EventScheduler/SerialSender
+        # stays simulated-only.
         sender = SerialSender(force_simulated=True)
 
-        direct_sender = None
-        if use_real_serial:
-            if _persist_serial_config(serial_port, int(serial_baud)):
-                st.toast(f"Saved {serial_port} @ {int(serial_baud)} as the new default in microcontroller_config.py")
-            direct_sender = DirectClassSerialSender(serial_port, int(serial_baud))
-
         def _on_finalized(final_class, avg_conf, n_frames):
+            object_identified(final_class)
             st.session_state.session_tomato_count += 1
             st.session_state.session_class_counts[final_class] = (
                 st.session_state.session_class_counts.get(final_class, 0) + 1
             )
             st.session_state.last_classified = (final_class, avg_conf)
-            if direct_sender is not None:
-                command = class_commands.get(final_class, "noclass")
-                reply = direct_sender.send(command)
-                st.session_state.serial_log.append({
-                    "time": datetime.now().strftime("%H:%M:%S"),
-                    "class": final_class,
-                    "command": command,
-                    "delivered": direct_sender.available,
-                    "reply": reply,
-                })
-                st.session_state.serial_log = st.session_state.serial_log[-SERIAL_LOG_MAX:]
 
         scheduler = EventScheduler(sender)
         session = TomatoSession(scheduler, on_finalized=_on_finalized, tab_source="dashboard")
@@ -549,8 +361,6 @@ if st.session_state.streaming:
 
                 results = model(frame, conf=conf_threshold, verbose=False, device=device, imgsz=INFERENCE_IMGSZ)
 
-                distractor_boxes = get_distractor_boxes(frame, device=device) if filter_non_tomato else []
-
                 detections = []
                 if results[0].boxes is not None:
                     for box in results[0].boxes:
@@ -559,13 +369,6 @@ if st.session_state.streaming:
                             continue
                         conf = float(box.conf[0])
                         x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-
-                        is_distractor, distractor_class = is_distractor_box((x1, y1, x2, y2), distractor_boxes)
-                        if is_distractor:
-                            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (128, 128, 128), 1)
-                            cv2.putText(frame, f"ignored ({distractor_class})", (int(x1), int(y1) - 10),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (128, 128, 128), 1)
-                            continue
 
                         class_name = model.names[cls_id]
                         detections.append({"class": class_name, "conf": conf})
@@ -581,7 +384,7 @@ if st.session_state.streaming:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame_placeholder.image(frame_rgb, use_container_width=True)
+                frame_placeholder.image(frame_rgb, width="stretch")
 
                 with live_placeholder.container():
                     st.metric("State", state_text)
@@ -593,19 +396,6 @@ if st.session_state.streaming:
                         if count > 0:
                             st.write(f"- {cls_name}: {count}")
 
-                    if use_real_serial:
-                        st.markdown("**Serial commands sent (Bluetooth)**")
-                        if st.session_state.serial_log:
-                            st.dataframe(
-                                [{"Time": e["time"], "Class": e["class"], "Command": e["command"],
-                                  "Status": "sent" if e["delivered"] else "simulated (no port open)",
-                                  "ESP32 reply": e.get("reply") or ("(no reply)" if e["delivered"] else "")}
-                                 for e in reversed(st.session_state.serial_log)],
-                                use_container_width=True, hide_index=True,
-                            )
-                        else:
-                            st.caption("No commands sent yet.")
-
                 # KPI panel hits the DB -- throttle to ~1x/second, not every frame
                 now = time.time()
                 if now - last_kpi_refresh > 1.0:
@@ -615,6 +405,4 @@ if st.session_state.streaming:
                 time.sleep(0.01)
         finally:
             scheduler.stop()
-            if direct_sender is not None:
-                direct_sender.close()
             cap.release()

@@ -94,8 +94,28 @@ def list_available_models():
 # related, kept separate from this file's vision/model config.
 
 # Tracking state machine tuning
-EXIT_GRACE_FRAMES = 3          # consecutive empty frames before declaring "tomato has left view"
+EXIT_GRACE_S = 0.6             # seconds of continuous no-detection before declaring "tomato has
+# left view". Time-based rather than a frame count (was EXIT_GRACE_FRAMES=3) because inference
+# speed varies with system load -- a fixed frame count is a different real-time duration every
+# run, so it was sometimes too short to bridge a real flicker (motion blur, lighting, edge
+# occlusion) while the tomato was still physically in view. A too-short grace finalizes+sends
+# the track, then the SAME tomato gets re-detected a moment later as a "new" one and sent AGAIN --
+# two classify() commands for one physical tomato. tomato_V2's Machine.cpp queue has no per-tomato
+# identity, only FIFO order (see esp32_firmware Machine.cpp docstring), so one extra send
+# permanently shifts every gate assignment after it for the rest of the run -- confirmed against
+# ESP32 queue-state logs 2026-08-18 (same double-send signature persisted even after adding
+# REACQUIRE_COOLDOWN_S below, because the cooldown only delays the false re-track, it doesn't stop
+# the false exit from happening in the first place). Raise this if flicker still causes double
+# sends; lower it if two real, closely-spaced tomatoes ever get merged into one track.
 MIN_FRAMES_TO_COUNT = 2        # ignore a track shorter than this (likely noise, not a real tomato)
+REACQUIRE_COOLDOWN_S = 2.0     # extra safety net on top of EXIT_GRACE_S: after a track finalizes,
+# ignore detections for this long before starting a new track. Raised 0.75 -> 2.0 (2026-08-18):
+# tomatoes are being placed by hand one at a time with a real gap, so a human hand entering/
+# leaving frame right after a tomato settles (or adjusting it) was long enough to still land
+# inside the old 0.75s window and get misread as "a new tomato has arrived" -- second phantom
+# classify() send for the same physical tomato, permanently desyncing the ESP32 queue for every
+# tomato after it. 2.0s is short compared to a human manually placing the next tomato, so it
+# should not cost any real detections in this hand-fed usage pattern.
 DEFECT_OVERRIDE_CONFIDENCE = 0.80  # any frame this confident about defect counts toward the override
 DEFECT_OVERRIDE_MIN_FRAMES = 2     # ...but only if it happened in at least this many frames...
 DEFECT_OVERRIDE_MIN_FRACTION = 0.35  # ...AND those frames are at least this share of the whole track
@@ -304,31 +324,34 @@ class TomatoSession:
         self.tab_source = tab_source
         self.tracking = False
         self.votes: list[tuple[str, float]] = []
-        self.empty_frame_count = 0
+        self._last_seen_time = 0.0
+        self._cooldown_until = 0.0
 
     def on_frame(self, detections: list[dict]):
         """detections: list of {'class': str, 'conf': float} for this frame
         (only classes 0-4, already confidence-thresholded upstream)."""
+        now = time.time()
         if detections:
-            self.empty_frame_count = 0
             if not self.tracking:
+                if now < self._cooldown_until:
+                    return  # post-finalize cooldown -- treat as flicker of the tomato that just
+                    # left, not a new one (see REACQUIRE_COOLDOWN_S above)
                 self.tracking = True
                 self.votes = []
+            self._last_seen_time = now
             # single-file assumption: take the single highest-confidence detection
             best = max(detections, key=lambda d: d["conf"])
             self.votes.append((best["class"], best["conf"]))
         else:
-            if self.tracking:
-                self.empty_frame_count += 1
-                if self.empty_frame_count >= EXIT_GRACE_FRAMES:
-                    self._finalize()
+            if self.tracking and (now - self._last_seen_time) >= EXIT_GRACE_S:
+                self._finalize()
 
     def _finalize(self):
         self.tracking = False
+        self._cooldown_until = time.time() + REACQUIRE_COOLDOWN_S
         exit_time = time.time()
         n_frames = len(self.votes)
         self.votes, votes = [], self.votes
-        self.empty_frame_count = 0
 
         if n_frames < MIN_FRAMES_TO_COUNT:
             return  # too short a track to trust -- likely noise, not a real tomato
