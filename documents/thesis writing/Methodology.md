@@ -1,6 +1,9 @@
-> **Note on this draft.** This chapter was assembled directly from your project repository (`D:\Research\Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--`), your seven monthly progress reports (Jan–Jul 2026), `PROJECT.md`, and the training logs for the currently deployed model (`runs_local/tomato_5class_v6_balanced/`). Every number in this draft is traceable to one of those sources — none are estimated or invented. Anywhere the source material did not contain a fact needed for the chapter, it is marked **[INFORMATION REQUIRED]** with a short note on what is needed. Two things could not be verified in this session and should be checked before submission:
-> 1. **`Tomato_Progress.pdf` could not be opened** (PDF-rendering tool unavailable in this environment). Where this chapter relies on that report (e.g. shelf-life protocol §5.5), it is flagged for you to cross-check.
-> 2. **A wiring conflict exists between two files** in the `tomato_V2` firmware regarding physical gate order (see §3.16.3) — flagged there, needs a quick check against the physical rig.
+> **Note on this draft.** This chapter was assembled directly from your project repository (`D:\Research\Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--`), your seven monthly progress reports (Jan–Jul 2026), `PROJECT.md`, the training logs for the currently deployed model (`runs_local/tomato_5class_v6_balanced/`), and — as of this revision — the full text of `Tomato_Progress.pdf` (the formal progress report submitted to your supervisors, extracted and read in full). Every number in this draft is traceable to one of those sources — none are estimated or invented. Anywhere the source material did not contain a fact needed for the chapter, it is marked **[INFORMATION REQUIRED]** with a short note on what is needed.
+>
+> `Tomato_Progress.pdf` resolved several previously-open items — most notably the exact tomato-collection site (§3.4) and the full shelf-life observation protocol (§3.20, Experiment 4), which turns out to derive exactly the `database.py` shelf-life values (31/29/24/12 days). It also revealed that this PDF's §4 ("Methodology") and its dataset-size target (>9,600 images) and split ratio (70/10/30) describe the **original proposed plan**, which differs from what was actually executed (7,849 images; ~67/19/9.5% split) — both are now reported side-by-side where relevant, since reporting only the achieved figures without noting the planned target would understate a real, citable deviation.
+>
+> One thing remains unresolved and should be checked before submission:
+> - **A wiring conflict exists between two files** in the `tomato_V2` firmware regarding physical gate order (see §3.16.3) — flagged there, needs a quick check against the physical rig.
 >
 > Delete this note before submitting the chapter.
 
@@ -77,10 +80,9 @@ This section describes every material — biological sample, hardware component,
 
 ### 3.3.1 Tomato Samples
 
-Padma-variety tomatoes were the biological material of the study. Images were captured at a fixed collection point referred to in the project's monthly progress reports as "the collecting center," using a white-box lightbox with LED illumination to keep image quality consistent across sessions (Source: January 2026 Progress Report, UWU/IIT/21/062). Tomatoes were visually sorted at the time of capture into the project's five target categories (four ripeness stages plus a defect category, defined in §3.7) so that Roboflow annotation could proceed directly from the sorted image sets.
+Padma-variety tomatoes were the biological material of the study. Images were captured at the **CLD Farm Fresh collecting center, Bandarawela** (Badulla District, Uva Province, Sri Lanka), where Padma tomatoes arrive from multiple cultivation areas across the Badulla region — chosen specifically because sourcing from a multi-farm collecting center captures natural variation in fruit size, surface texture, maturity progression, and handling-related defects while still allowing a single, consistent capture setup (Source: `Tomato_Progress.pdf`, §4.2 "Collection Site and Sampling"; January 2026 Progress Report, UWU/IIT/21/062). Photography itself was performed using a white-box lightbox with LED illumination to keep image quality consistent across sessions. Tomatoes were visually sorted at the time of capture into the project's five target categories (four ripeness stages plus a defect category, defined in §3.7) so that Roboflow annotation could proceed directly from the sorted image sets.
 
-**[INFORMATION REQUIRED]** — the following sample-level details are not recorded in the repository or in the progress reports made available for this draft and must be supplied before this subsection can be finalised:
-- Exact name/address of "the collecting center" (market, farm, or supplier) and its district/location.
+**[INFORMATION REQUIRED]** — the following sample-level details are still not recorded in the repository, the progress reports, or `Tomato_Progress.pdf`, and must be supplied before this subsection can be finalised:
 - Total number of physical tomato samples/units photographed (as distinct from the final image count, which includes multiple images per tomato from different angles/sessions — see §3.6).
 - Exact collection dates/sessions (progress reports confirm collection began in January 2026 and that "additional images... in varied lighting conditions" were planned as of the April 2026 reporting period, but do not give exact session dates).
 - Precise inclusion/exclusion criteria used when selecting tomatoes for each class (e.g. minimum/maximum size, specific defect types accepted under "defect").
@@ -90,7 +92,7 @@ Padma-variety tomatoes were the biological material of the study. Images were ca
 
 | Material/Sample | Description | Source | Quantity | Purpose |
 |---|---|---|---|---|
-| Padma tomato fruit | Fresh tomato units at varying ripeness stages (green, breaker, turning, red) and with visible defects (cracks, bruising, rot) | "The collecting center" [INFORMATION REQUIRED: exact location] | [INFORMATION REQUIRED: total physical sample count] | Source material for image dataset (§3.5) and for physical conveyor testing (§3.20–3.21) |
+| Padma tomato fruit | Fresh tomato units at varying ripeness stages (green, breaker, turning, red) and with visible defects (cracks, bruising, rot) | CLD Farm Fresh collecting center, Bandarawela, Badulla District | [INFORMATION REQUIRED: total physical sample count] | Source material for image dataset (§3.5) and for physical conveyor testing (§3.20–3.21) |
 | Publicly sourced defect-class images | Third-party tomato defect images incorporated into an earlier dataset version, later identified as a source of a domain/lighting mismatch and removed/supplemented (see §3.9.3, §3.13.3) | Kaggle (public dataset) | Not separately recorded; superseded by self-captured images in the current (v6) export | Historical — no longer part of the deployed model's training data |
 
 ### 3.3.2 Hardware Components
@@ -116,7 +118,7 @@ Padma-variety tomatoes were the biological material of the study. Images were ca
 | Conveyor frame | Metal box-section frame (1-inch box bar), painted finish | 1 | Structural support for the conveyor and all mounted components |
 | Conveyor rollers/bearings/brackets | Custom-fabricated bracket assemblies with integrated bearings | 6 (brackets) | Support smooth roller rotation |
 | Camera mount | Adjustable single-axis camera mounting mechanism (custom-fabricated) | 1 | Allows camera position/angle adjustment for field-of-view optimisation |
-| Camera | USB webcam [INFORMATION REQUIRED: exact model/resolution — not recorded in code or progress reports; code opens it generically via `cv2.VideoCapture(0)` at 960×720 @ 30 FPS] | 1 | Captures the live video feed used for detection |
+| Camera | USB webcam [INFORMATION REQUIRED: exact model — described only generically as a "high-resolution camera (e.g. USB HD camera)" in `Tomato_Progress.pdf` §2 and §4.6; code opens it generically via `cv2.VideoCapture(0)` at 960×720 @ 30 FPS] | 1 | Captures the live video feed used for detection |
 | Support wheels | "3-wheel" castors [INFORMATION REQUIRED: confirm intended use — listed in your component notes without further detail] | 3 | [INFORMATION REQUIRED] |
 | Perfboard / prototyping board | Dot board | [INFORMATION REQUIRED] | General circuit prototyping |
 | Header pins | 40-pin female header, 41-pin male header | [INFORMATION REQUIRED] | Connector interfacing |
@@ -166,11 +168,11 @@ Two items from your original list — "Eliyata yana thahadu tikata" (transport t
 
 ## 3.4 Tomato Sample Collection
 
-Tomato samples were collected at a single fixed location ("the collecting center") using a **purposive sampling strategy**: rather than sampling tomatoes at random, images were deliberately captured across all five target categories (green, breaker, turning, red, defect) to ensure the resulting dataset had adequate representation of every class the detection model needed to learn, including the comparatively rare defect condition. This is the appropriate sampling approach for a supervised object-detection dataset, where the goal is balanced, representative coverage of each class rather than a statistically random sample of the tomato population at large.
+Tomato samples were collected at the **CLD Farm Fresh collecting center, Bandarawela** (Badulla District), a multi-farm collection point where Padma tomatoes arrive from cultivation areas across the Badulla region, using a **purposive sampling strategy**: rather than sampling tomatoes at random, images were deliberately captured across all five target categories (green, breaker, turning, red, defect) to ensure the resulting dataset had adequate representation of every class the detection model needed to learn, including the comparatively rare defect condition. Sourcing from a multi-farm collecting center, rather than a single farm, was itself a deliberate choice to capture natural variation in fruit size, surface texture, and maturity progression within each class (`Tomato_Progress.pdf`, §4.2). Purposive sampling — rather than random or stratified probability sampling of the general tomato population — is the methodologically appropriate approach here because the research objective is model generalisation across defined visual categories for a supervised object-detection dataset, not population-level statistical inference about Sri Lankan tomato ripeness distributions at large.
 
 Collection began in January 2026, using a white-box lightbox with LED lighting to standardise background and illumination across capture sessions (January 2026 Progress Report). A further round of image collection, specifically targeting "varied lighting conditions" to improve the model's robustness, was planned for the April–May 2026 period (April 2026 Progress Report) — this directly relates to the domain/lighting mismatch problem discovered and corrected later in the project (§3.9.3).
 
-**[INFORMATION REQUIRED]**: exact collection location/address, exact sample count, precise session dates, and formal inclusion/exclusion criteria per class, as listed in §3.3.1. Once supplied, this subsection should also state why purposive sampling (as opposed to random or stratified probability sampling) is methodologically appropriate here — briefly, because the research objective is model generalisation across defined visual categories, not population-level inference about Sri Lankan tomato ripeness distributions.
+**[INFORMATION REQUIRED]**: exact total sample count, precise session dates, and formal inclusion/exclusion criteria per class, as listed in §3.3.1 (the collection site/address is now confirmed above).
 
 **[Insert photograph of tomato sample collection process]**
 *Figure 3.3. Tomato sample collection process at the collecting center, using a white-box LED lightbox for consistent image capture.*
@@ -235,6 +237,8 @@ Note that instance counts differ slightly from image counts because a single ima
 
 A comparable, earlier Roboflow export (`tomato_project.v5-version_04.yolov8`: 5,927 train / 1,692 valid / 845 test images) exists in the repository but is **not** the dataset used to train the currently deployed model — it predates the defect-class domain-mismatch correction described in §3.9.3 and is retained only for internal comparison, not as part of the reported methodology.
 
+**Deviation from the originally proposed dataset target.** The project's formal research proposal (`Tomato_Progress.pdf`, §4.2 "Dataset Size Target") set a target of "more than 9,600 images" across the five classes. The dataset actually exported and used to train the deployed model (7,849 images total) is smaller than this original target. This is reported here as a factual deviation between the planned and achieved dataset size, not glossed over — if the thesis's own stated objectives (§1.3 of the proposal document, "more than 5,500 Padma tomato images") are being carried into this thesis's objectives section, note that 7,849 images does exceed the lower 5,500-image objective figure, even though it falls short of the later, larger 9,600-image target stated in §4.2 of the same document.
+
 ## 3.7 Tomato Ripeness Classification
 
 The project defines five mutually exclusive target classes: four ripeness stages plus one quality/defect category. The ripeness-stage boundaries are defined by the proportion of red surface colouration, consistent with standard visual tomato-maturity grading conventions.
@@ -249,7 +253,7 @@ The project defines five mutually exclusive target classes: four ripeness stages
 | Red | Fully ripe | More than 80% of the surface red; uniform ripe colouration |
 | Defect | Rejected quality | Visible cracks, bruising, or rot; may occur at any ripeness stage but is treated as its own class and does not receive a ripeness label |
 
-Source: `PROJECT.md` (internal project documentation) — these thresholds should be cross-checked against and, if present, cited from the equivalent definition in `Tomato_Progress.pdf` before submission, since that is the authoritative academic document.
+Source: confirmed identical in both `PROJECT.md` (internal project documentation) and `Tomato_Progress.pdf` (Table 1, "Proposed tomato grading classes for the Padma variety"), the formal, authoritative academic document — the class boundaries (Breaker <30% red, Turning 30–80% red, Red >80% red) match exactly across both sources. `Tomato_Progress.pdf` additionally labels these Stage 1–Stage 4 (Green=Stage 1, Breaker=Stage 2, Turning-Red=Stage 3, Red=Stage 4); this thesis follows the descriptive class names (green, breaker, turning, red) used by the Roboflow dataset and the deployed model, which are the same classes under different labels.
 
 **[Insert Figure 3.8: Visual examples of each ripeness stage and the defect class]**
 *Figure 3.8. Representative images of Green, Breaker, Turning, Red, and Defect tomatoes from the dataset.*
@@ -308,7 +312,9 @@ The dataset was split by Roboflow at export time into training, validation, and 
 | Training | 5,498 | 66.9% | + 668 offline-augmented defect images (train-only supplement) |
 | Validation | 1,574 | 19.2% | Used for early stopping and hyperparameter/model-selection decisions during training |
 | Testing | 777 | 9.5% | Held out completely from training; used only for final reported performance (§3.14) |
-| **Total** | **7,849** | **100%*** | *Roboflow's own internal split ratio is not separately documented in the repository; the percentages above are calculated directly from the exported image counts. [INFORMATION REQUIRED: confirm the exact split ratio configured in Roboflow, e.g. 70/20/10, if a specific target ratio was set.]* |
+| **Total** | **7,849** | **100%*** | *Percentages calculated directly from the exported image counts.* |
+
+**Deviation from the originally proposed split ratio.** The project's formal research proposal (`Tomato_Progress.pdf`, §4.3 "Dataset Split") specified a target split of **70% training / 10% validation / 30% test**, deliberately using a larger-than-usual test set "to provide a sufficiently large training set while keeping a relatively large held-out test set for unbiased performance evaluation." The split actually produced by the Roboflow export used for the deployed model (66.9% / 19.2% / 9.5%, above) differs substantially from this target, particularly in allocating far less to the test split (9.5% vs. the planned 30%) and more to validation (19.2% vs. the planned 10%). **[INFORMATION REQUIRED]**: if this deviation was a deliberate later decision (e.g. favouring a larger validation set for early-stopping stability over a very large test set), state the reasoning here; otherwise report it as an unexplained deviation from the proposed methodology, since the "do not assume a procedure was followed as planned" instruction applies equally to assuming a deviation was intentional.
 
 Dataset splitting into independent training, validation, and test subsets is standard practice in supervised deep learning: the training set is used to fit model parameters, the validation set is used during training to monitor generalisation and to select the best checkpoint (via early stopping), and the test set — never seen during training or checkpoint selection — is used exactly once to report an unbiased estimate of real-world performance. Keeping the test set fully held out (including from the offline defect-class augmentation) was a deliberate methodological choice to avoid data leakage inflating the reported results.
 
@@ -590,14 +596,23 @@ Tomato --> Camera --> Image Frame --> Preprocessing --> YOLOv8 Detection
 - Result: "smooth and consistent" transport reported (July 2026 Progress Report). **[INFORMATION REQUIRED: exact number of trial tomatoes/runs, and any quantitative timing measurement (e.g. belt speed in cm/s), which is also needed to replace the placeholder belt-speed constant noted in §3.18.]**
 
 **Experiment 4 — Shelf-life observation study.**
-- Objective: establish an expected shelf-life duration for tomatoes at each ripeness/defect class, at the point of sorting.
-- Procedure: a 31-day room-temperature observation study (owned by K.R.D.H. Gunawardhana, UWU/IIT/21/017) produced the shelf-life values used by the system.
-- Result: Green = 31 days, Breaker = 29 days, Turning = 24 days, Red = 12 days, Defect = 0 days (hardcoded in `database.py`, `SHELF_LIFE`).
-- **[INFORMATION REQUIRED]**: the detailed experimental protocol — sample size per class, storage temperature/humidity, measurement frequency, and spoilage/end-of-life criteria — was not available in the repository or progress reports reviewed for this draft, and per your instruction is being reported here as a confirmed result without its underlying protocol. Since this sub-experiment belongs to a teammate's part of the project, obtain the protocol details from `Tomato_Progress.pdf` §5.5 (referenced in `PROJECT.md` as the authoritative source) or directly from K.R.D.H. Gunawardhana before finalising this subsection, so the shelf-life methodology can be described in the same level of detail as the other experiments in this chapter.
+- Objective: establish an expected remaining shelf-life duration for tomatoes at each ripeness/defect class, at the point of sorting.
+- Owner: K.R.D.H. Gunawardhana (UWU/IIT/21/017), who leads shelf-life prediction and KPI monitoring for the project.
+- Procedure (confirmed, `Tomato_Progress.pdf` §5.5 "Shelf-Life Estimation"): Padma tomatoes at known ripeness stage were observed under **room-temperature conditions** over a **31-day time-series period**, with **daily morning observations**. Colour differentiation was used at each observation to track the tomato's progression through the four ripeness stages (Green → Breaker → Turning Red → Red), with a tomato considered to have left the study once it became unsellable (excessive softening, fungal/rotting development, or severe blemishes — `Tomato_Progress.pdf` §4.5).
+- Result — stage durations: the time spent in each ripening stage was measured as **Green = 2 days, Breaker = 5 days, Turning Red = 12 days, Red = 12 days** (summing to the full 31-day observation period).
+- Result — remaining shelf life: the **remaining** shelf life reported by the system for a tomato detected at a given stage is the sum of that stage's own remaining duration plus all subsequent stages' durations, i.e. cumulative time-to-spoilage from that point onward. This arithmetic exactly reproduces the values hardcoded in `database.py`'s `SHELF_LIFE` table:
+  - Detected at **Green**: 2 + 5 + 12 + 12 = **31 days** remaining.
+  - Detected at **Breaker**: 5 + 12 + 12 = **29 days** remaining.
+  - Detected at **Turning**: 12 + 12 = **24 days** remaining.
+  - Detected at **Red**: 12 = **12 days** remaining.
+  - Detected as **Defect**: **0 days** (rejected at sorting; not part of the observation study, treated as immediately non-marketable by system design).
+- **[INFORMATION REQUIRED]**: the number of tomato samples observed per ripeness stage, and the storage relative-humidity conditions (only "room temperature" is specified in the source), were not stated in `Tomato_Progress.pdf` or elsewhere in the material reviewed for this draft. If available from K.R.D.H. Gunawardhana's own records, they should be added here to complete the protocol description.
 
 Full raw experimental data (per-trial logs, all screenshots, and the complete shelf-life observation dataset) should be placed in **Appendix B**.
 
 ## 3.21 System Testing
+
+The project's formal research proposal (`Tomato_Progress.pdf`, §4.8 "Testing and Evaluation") planned system testing in four phases: (1) controlled-environment tests under white-box/LED lighting to validate vision-model performance and tune the capture setup, (2) stress tests varying tomato orientation, occlusion, capture distance, and lighting (without conveyor operation), (3) field validation in a realistic post-harvest/collecting-center environment (described as a "future phase" in the proposal), and (4) benchmarking AI-based grading against manual grading (also a "future phase"). Against this plan, the test cases in Table 3.10 below correspond to: T-01 and T-02/T-03 to phase 1 (controlled/lightbox testing, completed); T-04 to a mechanical-only functional test not explicitly in the original four-phase plan; and T-05–T-08 (end-to-end integration/field-style testing) to phases 2–4, which the proposal itself always described as later-stage work — consistent with these rows still being open at the time of this draft, not a departure from plan.
 
 **Table 3.10. System test cases (status reflects evidence available at time of writing).**
 
