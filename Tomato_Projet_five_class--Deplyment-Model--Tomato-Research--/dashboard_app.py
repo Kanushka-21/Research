@@ -221,6 +221,15 @@ with col_controls:
     if stop_col.button("Stop", width="stretch"):
         st.session_state.streaming = False
 
+    if st.button(
+        "Reset ESP32 queue", width="stretch", disabled=bluetooth is None, key="reset_queue_controls",
+        help="Clears every gate's queue on the ESP32. Use this when a gate is stuck holding "
+             "entries that never popped (e.g. an IR sensor that didn't fire) instead of "
+             "manually waving a hand in front of the sensor.",
+    ):
+        reply = bluetooth.send_serial_commands("reset")
+        st.success(f"Queue reset -> {reply}") if reply else st.error("Reset sent, but no confirmation reply came back.")
+
 st.divider()
 
 col_video, col_live = st.columns([2, 1])
@@ -229,6 +238,13 @@ with col_video:
     frame_placeholder = st.empty()
 with col_live:
     st.subheader("This session")
+    if st.button(
+        "Reset ESP32 queue", width="stretch", disabled=bluetooth is None, key="reset_queue_session",
+        help="Same as the Reset ESP32 queue button above -- kept here too so it's reachable "
+             "without scrolling back up while a session is actively streaming.",
+    ):
+        reply = bluetooth.send_serial_commands("reset")
+        st.success(f"Queue reset -> {reply}") if reply else st.error("Reset sent, but no confirmation reply came back.")
     live_placeholder = st.empty()
 
 st.divider()
