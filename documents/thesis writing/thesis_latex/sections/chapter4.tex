@@ -42,24 +42,37 @@ The gap between mAP@50 and mAP@50--95 across all classes, from 0.936 to 0.711 ov
 
 \begin{figure}[H]
 \centering
-\TODO{Figure 4.1 -- confusion matrix for the test set evaluation, raw counts and row-normalised. Source files: runs\_local/tomato\_5class\_v6\_balanced/test\_eval/confusion\_matrix.png and confusion\_matrix\_normalized.png}
-\caption{Confusion matrix for the held out test set evaluation}
+\includegraphics[width=0.85\linewidth]{figures/confusion_matrix.png}
+\caption{Confusion matrix for the held out test set evaluation (raw counts)}
 \label{fig:confusion}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/confusion_matrix_normalized.png}
+\caption{Confusion matrix for the held out test set evaluation (row-normalised)}
+\label{fig:confusion_norm}
 \end{figure}
 
 \TODO{interpret Figure 4.1 in one paragraph. State explicitly which class pairs account for the largest off-diagonal mass, and confirm whether the dominant confusion is between adjacent ripening classes rather than with the defect class}
 
 \begin{figure}[H]
 \centering
-\TODO{Figure 4.2 -- training and validation loss curves and detection metrics against epoch. Source file: runs\_local/tomato\_5class\_v6\_balanced/results.png}
+\includegraphics[width=\linewidth]{figures/results.png}
 \caption{Training and validation curves for the deployed model}
 \label{fig:curves}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\TODO{Figure 4.3 -- precision, recall, F1 and precision-recall curves against confidence threshold. Source files: BoxP\_curve.png, BoxR\_curve.png, BoxF1\_curve.png, BoxPR\_curve.png}
-\caption{Detection metric curves as a function of confidence threshold}
+\includegraphics[width=0.48\linewidth]{figures/BoxP_curve.png}
+\hfill
+\includegraphics[width=0.48\linewidth]{figures/BoxR_curve.png}
+\\[1em]
+\includegraphics[width=0.48\linewidth]{figures/BoxF1_curve.png}
+\hfill
+\includegraphics[width=0.48\linewidth]{figures/BoxPR_curve.png}
+\caption{Detection metric curves as a function of confidence threshold: precision (top left), recall (top right), F1 (bottom left) and precision--recall (bottom right)}
 \label{fig:prcurves}
 \end{figure}
 
