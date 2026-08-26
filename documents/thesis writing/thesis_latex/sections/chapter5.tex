@@ -1,0 +1,63 @@
+\section{CONCLUSIONS}
+\label{ch:conclusions}
+
+% Guideline H:1 item 14: "A detailed evaluation of results and an overall
+% assessment of the research outcomes should be presented."
+% Chapters 3 to 5 together must not exceed 40 pages.
+
+\subsection{Summary of Findings}
+\label{sec:c_summary}
+
+\TODO{one paragraph per research question from Section~\ref{sec:questions}, each answered directly from the results of Chapter~\ref{ch:results} and each citing the table or figure that supports it. Answer the question that was asked; do not restate the method}
+
+\subsection{Achievement of Objectives}
+\label{sec:c_objectives}
+
+\TODO{take the six specific objectives of Section~\ref{sec:objectives} in order and state for each whether it was fully achieved, partially achieved or not achieved, with the evidence. Objectives that were only partially met should be stated as such -- an examiner reads an honest partial far more favourably than an unsupported claim of completion}
+
+\subsection{Limitations}
+\label{sec:c_limitations}
+
+The following limitations follow from evidence gathered during the study rather than from generic caution.
+
+\begin{enumerate}
+    \item \textbf{Ripening classes are cut from a continuous variable.} Breaker, turning and green are separated by thresholds on the proportion of red surface, and fruit near a threshold is genuinely ambiguous. The residual confusion between adjacent ripening classes is therefore a property of a hard multi-class framing applied to a continuous quantity, not a deficiency the model could be trained out of.
+
+    \item \textbf{Class boundaries were judged visually, without instrumental measurement.} No colorimetric measurement was used to set or verify the 30\,\% and 80\,\% boundaries at annotation time. \TODO{state the annotation reliability figure from Section~\ref{sec:annotation_qc} here, or state that reliability was not measured}
+
+    \item \textbf{Splitting was performed by image, not by fruit.} \TODO{resolve against Section~\ref{sec:m_preprocessing}. If images of one physical fruit could fall in more than one split, state plainly that the reported metrics may be optimistically biased and quantify the exposure if possible}
+
+    \item \textbf{Single-file flow is assumed.} The tracking and voting policy of Section~\ref{sec:m_realtime} assumes one fruit is in view at a time. Simultaneous multi-fruit identity tracking is not implemented, which caps achievable throughput relative to a system that maintains per-object identity.
+
+    \item \textbf{One capture setting.} All training images were captured under a single lightbox arrangement at one collecting centre. Performance under substantially different lighting or background beyond what Experiment~3 validated has not been quantified.
+
+    \item \textbf{Shelf life is a static per-class lookup, not a per-fruit prediction.} The value returned is a fixed figure derived from measured stage durations, applied by Equation~\eqref{eq:shelflife} and conditioned only on the detected class. It is not an estimate conditioned on the condition of the individual fruit, and because the point of entry into the detected stage is unobservable it is an upper bound rather than an expected value.
+
+    \item \textbf{Defect class evidence is thin.} The defect class contributes only 66 of the 787 test instances and depends on an augmentation supplement for training balance, so its reported figures carry the widest uncertainty of any class.
+
+    \item \TODO{add any limitation arising from the end-to-end sorting trial reported in Section~\ref{sec:r_sorting}, once that trial is written up}
+\end{enumerate}
+
+\subsection{Recommendations for Future Work}
+\label{sec:c_future}
+
+\TODO{develop each of the following into a short paragraph, keeping each one traceable to a specific limitation above rather than offering generic suggestions}
+
+\begin{enumerate}
+    \item \textbf{Treat ripeness as ordinal rather than nominal.} An ordinal regression head, or a model predicting the proportion of red surface directly with thresholds applied afterwards, would match the underlying continuous variable and would make a boundary error between adjacent stages cost less than a two-stage error, which a flat five-way classifier cannot express.
+
+    \item \textbf{Ground the class boundaries instrumentally.} Recording a colorimetric measurement for a subset of fruit at annotation time would convert the 30\,\% and 80\,\% boundaries from visual judgements into measured ones.
+
+    \item \textbf{Split by fruit identity.} Assigning every image of one physical fruit to a single split removes the near-duplicate leakage pathway entirely.
+
+    \item \textbf{Extend the capture domain.} Deliberately capturing under varied illumination and background, and re-evaluating, would quantify the robustness that the present single-setting dataset cannot.
+
+    \item \textbf{Condition shelf life on the individual fruit.} Predicting remaining shelf life from fruit-level visual features rather than from class membership alone would replace the upper bound of Equation~\eqref{eq:shelflife} with a per-fruit estimate.
+
+    \item \textbf{Multi-object tracking.} Maintaining per-fruit identity across frames would lift the single-file constraint and raise achievable throughput.
+\end{enumerate}
+
+\subsection{Concluding Remarks}
+\label{sec:c_closing}
+
+\TODO{close in one short paragraph: what was built, what it demonstrates for post-harvest handling of the Padma variety in Sri Lanka, and what the study contributes beyond this cultivar. The corrective cycle documented in Section~\ref{sec:r_corrections} is the most transferable contribution and is worth naming here}

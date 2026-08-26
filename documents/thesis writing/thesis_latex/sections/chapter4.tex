@@ -1,0 +1,150 @@
+\section{RESULTS AND DISCUSSION}
+\label{ch:results}
+
+% NOTE ON SCOPE: Experiments 1 and 2 below are populated from the training
+% and evaluation logs already in the project repository, and every figure is
+% traceable to those logs. Experiments 3 to 5 are scaffolded and awaiting
+% your recorded trial data. Guideline H:1 item 13 requires this chapter to
+% correspond directly to Chapter 3, so the section order here follows the
+% experiment order of Section 3.20 exactly.
+
+\subsection{Detection Performance on the Held-Out Test Split}
+\label{sec:r_test}
+
+The selected checkpoint was evaluated once against the 777-image held-out test split, containing 787 annotated instances. Results are given in Table~\ref{tab:testresults}.
+
+\begin{table}[H]
+\caption{Held out test set performance of the deployed YOLOv8m model}
+\label{tab:testresults}
+\centering
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{Class} & \textbf{Images} & \textbf{Instances} & \textbf{Precision} & \textbf{Recall} & \textbf{mAP@50} & \textbf{mAP@50--95} \\
+\midrule
+Breaker & 191 & 191 & 0.924 & 0.937 & 0.966 & 0.762 \\
+Defect  & 45  & 66  & 0.766 & 0.818 & 0.804 & 0.599 \\
+Green   & 191 & 191 & 0.976 & 0.990 & 0.982 & 0.722 \\
+Red     & 190 & 190 & 0.987 & 0.958 & 0.988 & 0.724 \\
+Turning & 149 & 149 & 0.880 & 0.906 & 0.941 & 0.749 \\
+\midrule
+\textbf{Overall} & \textbf{777} & \textbf{787} & \textbf{0.906} & \textbf{0.922} & \textbf{0.936} & \textbf{0.711} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\TODO{add the bootstrap 95\,\% confidence interval for each overall metric, computed as described in Section~\ref{sec:m_evaluation}. This matters most for the defect row, which rests on 66 instances}
+
+Two patterns in Table~\ref{tab:testresults} deserve comment.
+
+The three classes at the ends of the colour progression, green and red, are detected most reliably, at mAP@50 of 0.982 and 0.988. The classes in the middle of the progression perform less well, and the defect class least well of all. This ordering is not incidental. Green and red are defined by the absence and the near-completeness of red colouration respectively, which are absolute rather than relative judgements, whereas breaker and turning are separated from their neighbours by a threshold on a continuous quantity. A boundary placed at 30\,\% or 80\,\% red surface has no visual discontinuity behind it, so fruit close to either boundary is genuinely ambiguous rather than merely difficult.
+
+The gap between mAP@50 and mAP@50--95 across all classes, from 0.936 to 0.711 overall, indicates that the model finds fruit reliably but localises the box less tightly. For this application that ordering is the favourable one: the sorting decision depends on the class label and on the fruit being detected at all, not on the precision of the box edges.
+
+\begin{figure}[H]
+\centering
+\TODO{Figure 4.1 -- confusion matrix for the test set evaluation, raw counts and row-normalised. Source files: runs\_local/tomato\_5class\_v6\_balanced/test\_eval/confusion\_matrix.png and confusion\_matrix\_normalized.png}
+\caption{Confusion matrix for the held out test set evaluation}
+\label{fig:confusion}
+\end{figure}
+
+\TODO{interpret Figure 4.1 in one paragraph. State explicitly which class pairs account for the largest off-diagonal mass, and confirm whether the dominant confusion is between adjacent ripening classes rather than with the defect class}
+
+\begin{figure}[H]
+\centering
+\TODO{Figure 4.2 -- training and validation loss curves and detection metrics against epoch. Source file: runs\_local/tomato\_5class\_v6\_balanced/results.png}
+\caption{Training and validation curves for the deployed model}
+\label{fig:curves}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\TODO{Figure 4.3 -- precision, recall, F1 and precision-recall curves against confidence threshold. Source files: BoxP\_curve.png, BoxR\_curve.png, BoxF1\_curve.png, BoxPR\_curve.png}
+\caption{Detection metric curves as a function of confidence threshold}
+\label{fig:prcurves}
+\end{figure}
+
+Training converged in 4.57~hours. Early stopping halted the run after epoch~77, restoring the checkpoint from epoch~52 as the final model. The fused model comprises 93 layers and 25{,}842{,}655 parameters at 78.7~GFLOPs, and processes a test image in 6.7~ms of inference time, with 0.7~ms of preprocessing and 0.7~ms of postprocessing, on the RTX 3070~Ti host. At 30~\acrshort{FPS} the camera delivers a frame every 33~ms, so inference is not the limiting factor in the real-time path.
+
+Figure~\ref{fig:prcurves} is also the basis of the deployment confidence threshold of 0.45 used in Section~\ref{sec:m_realtime}, taken as the approximate maximum of the $F_1$ curve.
+
+\subsection{Architecture Comparison}
+\label{sec:r_comparison}
+
+Table~\ref{tab:archcomparison} compares the deployed YOLOv8m model with a YOLO26m model trained on the identical dataset and evaluated on the identical held-out split.
+
+\begin{table}[H]
+\caption{Comparison of YOLOv8m and YOLO26m on the same held out test split}
+\label{tab:archcomparison}
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Metric} & \textbf{YOLOv8m} & \textbf{YOLO26m} & \textbf{Difference} \\
+\midrule
+Precision   & 0.906 & 0.913 & $+0.007$ \\
+Recall      & 0.922 & 0.911 & $-0.011$ \\
+mAP@50      & 0.936 & 0.930 & $-0.006$ \\
+mAP@50--95  & 0.711 & 0.785 & $+0.074$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{Per class comparison of YOLOv8m and YOLO26m on the same held out test split}
+\label{tab:archperclass}
+\centering
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{\textbf{mAP@50}} & \multicolumn{3}{c}{\textbf{mAP@50--95}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Class} & \textbf{v8m} & \textbf{26m} & \textbf{Diff.} & \textbf{v8m} & \textbf{26m} & \textbf{Diff.} \\
+\midrule
+breaker & 0.966 & 0.962 & $-0.004$ & 0.762 & 0.845 & $+0.083$ \\
+defect  & 0.804 & 0.754 & $-0.050$ & 0.599 & 0.681 & $+0.082$ \\
+green   & 0.982 & 0.991 & $+0.009$ & 0.722 & 0.816 & $+0.094$ \\
+red     & 0.988 & 0.985 & $-0.003$ & 0.724 & 0.768 & $+0.044$ \\
+turning & 0.941 & 0.956 & $+0.015$ & 0.749 & 0.785 & $+0.036$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two architectures are effectively tied on detection rate: the mAP@50 difference of $-0.006$ overall is within the range that would be expected from run-to-run variation on a test split of this size. Localisation quality differs clearly and consistently, with YOLO26m ahead on mAP@50--95 in every class and by 0.074 overall.
+
+The exception is instructive. The defect class is the only class where YOLO26m loses ground on detection rate, falling from 0.804 to 0.754, while simultaneously gaining 0.082 on mAP@50--95. The class that improves least in detection is the same class that was reconstructed after the confound described in Section~\ref{sec:annotation_qc}, has the fewest real training instances, and relies most heavily on the augmentation supplement. That is consistent with the defect class remaining the most fragile part of the dataset rather than with any deficiency of the architecture.
+
+YOLOv8m was retained for deployment. The metric on which YOLO26m leads, mAP@50--95, rewards tight box regression, which the sorting mechanism does not use: the gate decision depends on the class label and on the fruit being detected, not on box edge precision. On the metrics that do bear on sorting, detection rate and defect-class recall, YOLOv8m is equal or ahead. This is a task-specific justification rather than a claim that one architecture is generally superior.
+
+\TODO{add the bootstrap confidence intervals from Section~\ref{sec:m_evaluation} to Table~\ref{tab:archcomparison}, then state which of these differences survive. Several of the mAP@50 differences are likely to fall inside overlapping intervals, and saying so strengthens the argument rather than weakening it}
+
+The uncontrolled differences between the two training runs, noted in Section~\ref{sec:m_experiments}, must be carried into the interpretation. The comparison model was trained with a fixed batch size of two against automatic batch selection for the deployed model, and the runs early-stopped after different numbers of epochs. The result therefore establishes which of two concretely trained models better suits this task, and not which architecture is superior under matched optimisation budgets.
+
+\subsection{Effect of the Dataset Corrections}
+\label{sec:r_corrections}
+
+\TODO{report the defect-class performance before and after the two corrections of Section~\ref{sec:annotation_qc}, so that the corrective cycle is evidenced rather than asserted. The pre-correction run on the earlier dataset version is retained at runs\_local/tomato\_5class\_local/. Give defect mAP@50 before the box-geometry fix, after it, and after the imaging-conditions fix, and identify which dataset version each figure belongs to}
+
+This section is the most transferable result in the chapter and should be written at length. A detector that scored well on an offline split was failing on live input for a reason no aggregate metric exposed, and the diagnosis came from the confusion matrix and live trials rather than from the summary table. The general lesson, that a scarce class topped up from an outside source can teach a network the capture conditions instead of the object, applies well beyond tomato grading.
+
+\subsection{Live Classification Validation}
+\label{sec:r_live}
+
+\TODO{report Experiment 3. Give the number of fruits presented per class, the number classified correctly, and the resulting per-class and overall accuracy, for both the pre-correction and post-correction sessions. Screenshot evidence is held in live dashboard results-2026.07.26 and live dashboard results-2026.07.29}
+
+\subsection{Conveyor Transport and End-to-End Sorting}
+\label{sec:r_sorting}
+
+\TODO{report Experiment 4. Part one: the mechanical transport trial, with the number of fruits run, the belt speed used, and any stalling or displacement observed. Part two: the closed-loop sorting trial, with the number of fruits per class, how many were diverted at the correct gate, and the failure mode of each incorrect diversion. Report the measured belt speed in cm/s, since it is needed to interpret the gate release delay of Section~\ref{sec:m_integration}}
+
+\subsection{Shelf Life Observation}
+\label{sec:r_shelflife}
+
+\TODO{report Experiment 5. Give the measured duration of each ripening stage with its spread across fruits, not a single value per stage, and the resulting remaining shelf life per class from Equation~\eqref{eq:shelflife}. Then compare against the published Padma values reproduced in Table~\ref{tab:abekoon_stages}, noting that the six published stages map onto your four by the correspondence in Table~\ref{tab:merge}. Agreement or disagreement with that study is a result in itself and should be stated either way}
+
+\subsection{System Test Outcomes}
+\label{sec:r_tests}
+
+\TODO{reproduce Table~\ref{tab:testcases} with two further columns, actual result and pass or fail status, one row per test case T-01 to T-08. Do not enter a pass status for any row not backed by a recorded trial}
+
+\subsection{Discussion}
+\label{sec:r_discussion}
+
+\TODO{draw the results together. Suggested structure: (i) what the detection results show about the feasibility of cultivar-specific grading for the Padma variety, and how they compare with the published tomato detection results reviewed in Section~\ref{sec:detection}; (ii) why the ripening-boundary confusion is a property of the class definition rather than a model deficiency, and what that implies for anyone defining discrete classes on a continuous colour gradient; (iii) what the sensor-released gate design achieved in practice against the timed alternative of Equation~\eqref{eq:timed}; (iv) how the measured shelf-life values compare with the published Padma study; and (v) what the corrective cycle of Section~\ref{sec:r_corrections} implies for dataset construction practice more generally}

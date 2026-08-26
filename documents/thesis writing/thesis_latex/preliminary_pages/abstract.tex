@@ -1,0 +1,15 @@
+\section*{ABSTRACT}
+
+% WORD BUDGET: the guideline caps the abstract at 300 words. The text below
+% is approximately 210 words, deliberately leaving about 85 words for the
+% results and conclusions sentences to be added once Chapters 4 and 5 are
+% final. Do not let the total exceed 300.
+
+Post-harvest loss in the Sri Lankan fresh tomato supply chain is driven largely by manual grading, which is slow, subjective between operators and mechanically damaging to fruit. This research develops and evaluates an integrated computer vision and mechatronic sorting system for the locally cultivated Padma variety (\textit{Solanum lycopersicum}). A dataset of 7,849 images was captured under controlled lightbox illumination at a commercial collecting centre in Bandarawela, annotated across five mutually exclusive classes (green, breaker, turning, red and defect) and split 70:20:10 into training, validation and held-out test subsets. A YOLOv8-medium detector was fine-tuned on a single 8~GB graphics processing unit, evaluated once against the held-out split, and compared with a YOLO26-medium model trained on identical data. A conveyor prototype was fabricated from a 25~mm box-section frame driven by a NEMA~23 stepper motor through a 3:1 timing-belt reduction, and fitted with an overhead camera, four infrared presence sensors and four servo-actuated diverter gates under ESP32 control. Rather than timing gate release from the full camera-to-gate distance, the firmware carries each classification through a cascaded stage queue and releases a gate only when the fruit breaks that stage's sensor beam, removing the dominant source of timing error. Ripening classes are mapped to a remaining shelf life obtained from a 31-day room-temperature observation study, and every classification is logged and displayed on a live operator dashboard.
+
+\TODO{two to three sentences summarising the principal quantitative results and the main conclusion, to be written once Chapters 4 and 5 are complete}
+
+\vspace{4mm}
+\noindent \textbf{Keywords:} Padma tomato; YOLOv8; post-harvest sorting; mechatronic conveyor; shelf-life estimation
+
+\clearpage

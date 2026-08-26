@@ -1,0 +1,14 @@
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Overall research methodology, from problem definition to system level evaluation}}{14}{figure.caption.3}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Image acquisition setup for dataset capture and the conveyor mounted camera arrangement}}{18}{figure.caption.7}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Representative sample images for each of the five target classes}}{19}{figure.caption.10}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Example of whole fruit bounding box annotation for a multiple fruit image with mixed classes}}{22}{figure.caption.13}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Image preprocessing and augmentation pipeline, including the offline defect class branch}}{24}{figure.caption.14}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Simplified single stage detection workflow of the YOLOv8 architecture}}{26}{figure.caption.16}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Real time tomato detection and classification process}}{30}{figure.caption.18}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Computer aided design model and assembled hardware prototype}}{31}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.9}{\ignorespaces Software architecture and operator dashboard of the detection and sorting application}}{32}{figure.caption.20}%
+\contentsline {figure}{\numberline {3.10}{\ignorespaces Hardware and software integration and communication flow}}{33}{figure.caption.21}%
+\contentsline {figure}{\numberline {3.11}{\ignorespaces Complete end to end system workflow from fruit input to sorted output and logged record}}{34}{figure.caption.22}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Confusion matrix for the held out test set evaluation}}{40}{figure.caption.25}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Training and validation curves for the deployed model}}{40}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Detection metric curves as a function of confidence threshold}}{40}{figure.caption.27}%

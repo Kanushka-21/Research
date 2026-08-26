@@ -1,0 +1,41 @@
+\section*{APPENDICES}
+\addcontentsline{toc}{section}{Appendix A: Sample Records and Annotation Procedure}
+\addcontentsline{toc}{section}{Appendix B: Configuration, Raw Records and Shelf Life Data}
+\addcontentsline{toc}{section}{Appendix C: Pin Assignment, Wiring and Component Data}
+
+All supporting materials which are too extensive for the body text are included here.
+
+\subsection*{Appendix A: Sample Records and Detailed Annotation Procedure}
+
+\textbf{[TO BE SUPPLIED]}
+
+\begin{itemize}
+    \item Sample-level record: total number of fruits photographed, the number per class, and the capture session dates (referred to in Section~\ref{sec:m_samples}).
+    \item Inclusion and exclusion criteria applied to each class at the point of collection.
+    \item The full Roboflow annotation procedure: tool navigation, box-drawing convention, class-labelling rules and the review step (referred to in Section~\ref{sec:m_annotation}).
+    \item The annotation reliability check: sample size, procedure and agreement statistic (referred to in Section~\ref{sec:annotation_qc}).
+\end{itemize}
+
+\subsection*{Appendix B: Training Configuration, Raw Experimental Records and Shelf Life Data}
+
+\textbf{[TO BE SUPPLIED]}
+
+\begin{itemize}
+    \item The complete training configuration file, \texttt{args.yaml}, for the deployed run (referred to in Section~\ref{sec:m_training}).
+    \item The full per-epoch metric log, \texttt{results.csv}, and the training console log.
+    \item The equivalent configuration and log for the comparison architecture of Experiment~2.
+    \item Raw records for Experiments 3 and 4: trial dates, fruit counts per class, per-trial outcomes and the dashboard screenshots.
+    \item The complete shelf-life observation record from Experiment~5: per-fruit, per-day stage assignment, and the storage temperature and relative humidity (referred to in Section~\ref{sec:m_shelflife}).
+\end{itemize}
+
+\subsection*{Appendix C: Pin Assignment, Wiring Diagrams and Component Data}
+
+\textbf{[TO BE SUPPLIED]}
+
+\begin{itemize}
+    \item The ESP32 pin assignment table: the digital output driving each gate servo, the digital input reading each infrared sensor, the step and direction pins to the motor driver, and the analogue input for the speed potentiometer (referred to in Sections~\ref{sec:m_hardware} and \ref{sec:m_prototype}).
+    \item The physical layout diagram showing gate and sensor positions along the belt in the order red, turning, breaker, green, together with the sensor-to-blade offset measured at each gate.
+    \item Wiring diagrams for the 24\,V driver domain, the 12\,V logic domain and the servo supply.
+    \item Datasheets or specifications for the minor electronic components omitted from Table~\ref{tab:hardware}.
+    \item The firmware source listing for the staged queue and command protocol described in Section~\ref{sec:m_integration}.
+\end{itemize}
