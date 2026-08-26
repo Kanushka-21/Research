@@ -36,17 +36,28 @@ From *SECTION-H Dissertation Preparation Guidelines and Format*:
 | Left 3.85 cm; right, top, bottom 2.5 cm | `main.tex` — `\geometry` |
 | Line spacing 1.5, one line between paragraphs | `\setstretch{1.5}`, `\parskip` |
 | Page numbers, bottom centre | `\pagestyle{plain}` |
-| Roman numerals for prefatory pages | `\pagenumbering{roman}` before the cover |
-| Arabic numerals from Chapter 1 | `\pagenumbering{arabic}` before `chapter1` |
-| Roman numerals for appendices | `\renewcommand{\thepage}{A-\roman{page}}` |
+| Roman numerals for prefatory pages | `\pagenumbering{roman}` before the title page |
+| Arabic numerals from Chapter 1 through Appendices | `\pagenumbering{arabic}` before `chapter1`, never reset |
 | Numbered, captioned tables and figures, all cited in text | `\numberwithin{...}{section}` |
 | Author-Year citation system | `natbib` + `agsm` |
 
-**One conflict you must decide on.** The guideline says appendices carry Roman
-numerals; the official UWU LaTeX template does not switch back to Roman after
-the References. This project follows the *written guideline* and numbers
-appendix pages `A-i`, `A-ii`, … If your coordinator prefers the template
-behaviour, delete the three lines under `APPENDICES` in `main.tex`.
+**Template conformance.** This project now follows the official UWU Thesis
+LaTeX Template structure exactly: no separate cover page (the title page is
+the first, unnumbered-but-counted, roman-numeral page), `\cleardoublepage`
+between sections, and Arabic page numbers that run continuously from Chapter
+1 through References and the Appendices (no reset to Roman `A-i`, `A-ii`, …
+after References). The package list matches the template plus `textcomp`
+(required for `\textdegree`, used in Chapters 2 and 3) — `siunitx`,
+`amssymb`, `array`, `ragged2e` and the explicit `caption` load were removed
+as unused. `\setcitestyle` was dropped and `hyperref` is loaded bare (no
+`hidelinks`, no PDF metadata), matching the template; this means citation
+and link boxes will render in their default hyperref colour rather than
+being invisible in print. If the coordinator wants links/citations
+uncoloured, add `[hidelinks]` back to the `hyperref` load.
+
+The old cover page markup still lives in
+`preliminary_pages/cover_page.tex` but is no longer `\input` from
+`main.tex` — delete the file if it's not needed for anything else.
 
 **Reference style.** The guideline's specimen format
 (`Bell, C.H. (1991). Title. Journal Volume, 81-93.`) is not exactly APA and not

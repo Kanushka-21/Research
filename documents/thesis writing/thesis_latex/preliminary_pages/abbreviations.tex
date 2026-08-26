@@ -1,8 +1,3 @@
-%---------------------------------------------------------------
-%  LIST OF ABBREVIATIONS
-%  Use \acrfull{KEY} at first mention in the text and \acrshort{KEY}
-%  thereafter, so that every acronym is expanded exactly once.
-%---------------------------------------------------------------
 \newacronym{AI}{AI}{Artificial Intelligence}
 \newacronym{ANN}{ANN}{Artificial Neural Network}
 \newacronym{CAD}{CAD}{Computer Aided Design}
@@ -35,13 +30,9 @@
 \newacronym{VRAM}{VRAM}{Video Random Access Memory}
 \newacronym{YOLO}{YOLO}{You Only Look Once}
 
-% \glsaddall forces every entry above into the printed list, whether or not
-% it has been reached by an \acrshort/\acrfull call. Without it, an acronym
-% that appears in the text only in its expanded form would be silently
-% dropped from the List of Abbreviations.
 \glsaddall
 
 \renewcommand{\glsnamefont}[1]{\textbf{#1}}
-\printglossary[type=\acronymtype, title=LIST OF ABBREVIATIONS,
+\printglossary[type=\acronymtype, title=List of Abbreviations,
                style=long, nopostdot, nogroupskip, nonumberlist]
 \setcounter{table}{0}

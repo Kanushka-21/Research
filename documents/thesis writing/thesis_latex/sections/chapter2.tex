@@ -1,4 +1,4 @@
-\section{LITERATURE REVIEW}
+\section{Literature Review}
 \label{ch:literature}
 
 \subsection{Theoretical Background}
@@ -98,3 +98,5 @@ Three gaps follow from the review above. They are stated narrowly, because adjac
 \textbf{Gate release is generally predicted rather than detected.} Belt sensors are already used in sorting rigs, but predominantly to trigger image capture \citep{moya2025}. Actuation itself is typically timed from belt kinematics, per Equation~\eqref{eq:timed}, which makes sorting accuracy dependent on belt speed remaining constant and degrades progressively along the line. A control architecture in which each gate is released by its own presence sensor, with classifications held in a queue until arrival, removes that dependency but is not established in the tomato sorting literature.
 
 \textbf{Grade-to-shelf-life mapping and line-level reporting are rarely combined with an operating rig.} This gap is the narrowest of the three, and must be stated carefully. \citet{geetha2025} do link deep-learning grading to shelf-life prediction and a servo-driven sorting prototype, so it cannot be claimed that no such system exists. What remains absent is a system in which the shelf-life values are measured for the specific cultivar being graded, rather than learned from generic data, and in which each classification and its associated remaining shelf life are logged to a persistent record that drives live batch-level operating indicators. It is that combination, for this cultivar, that the present study addresses.
+
+\clearpage

@@ -5,14 +5,14 @@
 %  Uva Wellassa University -- Faculty of Applied Sciences
 %  Department of Computer Science and Informatics
 %
-%  Formatting follows SECTION-H "DISSERTATION PREPARATION GUIDELINES
-%  AND FORMAT" and the official UWU Thesis LaTeX Template.
+%  Formatting follows the official UWU Thesis LaTeX Template exactly,
+%  informed by SECTION-H "DISSERTATION PREPARATION GUIDELINES AND FORMAT".
 %    - A4, single sided, Times New Roman 12 pt
 %    - Margins: left 3.85 cm; right, top, bottom 2.5 cm
 %    - Line spacing 1.5, one blank line between paragraphs
 %    - Page numbers bottom centre
-%    - Roman numerals: prefatory pages and appendices
-%    - Arabic numerals: Chapters 1-5 and References
+%    - Roman numerals: prefatory pages only
+%    - Arabic numerals: Chapters 1-5, References and Appendices
 %    - Author-Year (Harvard) citation system
 %
 %  Compile with: pdflatex -> bibtex -> makeglossaries -> pdflatex x2
@@ -21,8 +21,8 @@
 \documentclass[a4paper, 12pt]{article}
 
 %----------------------- Packages -------------------------------------
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
+% Package list matches the official UWU Thesis LaTeX Template, plus
+% textcomp (required for \textdegree, used in Chapters 2 and 3).
 \usepackage{textcomp}          % \textdegree and related symbols
 \usepackage{mathptmx}          % Times New Roman for text and maths
 \usepackage{setspace}
@@ -33,23 +33,12 @@
 \usepackage{tabularx}
 \usepackage{longtable}
 \usepackage{booktabs}          % professional rules for all tables
-\usepackage{array}
-\usepackage{ragged2e}
 \usepackage{float}
 \usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{siunitx}
 \usepackage{datetime}
 \usepackage{natbib}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage[hidelinks]{hyperref}
-\hypersetup{
-  pdftitle={AI-Based Tomato Ripening Stage Detection and Sorting System with Shelf-Life Estimation for the Commonly Consumed Padma Variety in Sri Lanka Using Computer Vision and Conveyor Automation},
-  pdfauthor={K.R.D.H. Gunawardhana, P.L.H. Hirushan, W.K. Gayan},
-  pdfsubject={BSc (Hons) in Industrial Information Technology -- Final Year Research Dissertation},
-  pdfkeywords={Padma tomato; YOLOv8; post-harvest sorting; mechatronic conveyor; shelf-life estimation}
-}
+\usepackage{subcaption}        % also provides \captionsetup, via caption
+\usepackage{hyperref}
 \usepackage[acronym, toc]{glossaries}
 
 \newdateformat{monthyeardate}{\monthname[\THEMONTH] \THEYEAR}
@@ -58,14 +47,12 @@
 %----------------------- Referencing ----------------------------------
 % Harvard / Author-Year system, as required by guideline H:2(7)A.
 \bibliographystyle{agsm}
-\setcitestyle{authoryear,round}
 
 %----------------------- Page geometry --------------------------------
 \geometry{left=3.85cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
 \setstretch{1.5}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1em plus 0.2em minus 0.2em}  % one blank line between paragraphs
-\pagestyle{plain}                     % page number, bottom centre
 
 %----------------------- Table and figure captions --------------------
 \captionsetup[table]{labelsep=colon, singlelinecheck=false,
@@ -104,38 +91,37 @@
 %======================================================================
 \pagenumbering{roman}
 
-\input{preliminary_pages/cover_page}
 \input{preliminary_pages/title_page}
 
 \titleformat{\section}{\large\bfseries\centering}{\thesection}{1em}{}
 
 \addcontentsline{toc}{section}{Declaration}
 \input{preliminary_pages/declaration}
-\clearpage
+\cleardoublepage
 
 \addcontentsline{toc}{section}{Acknowledgement}
 \input{preliminary_pages/acknowledgement}
-\clearpage
+\cleardoublepage
 
 \addcontentsline{toc}{section}{Contents}
 \tableofcontents
-\clearpage
+\cleardoublepage
 
 \addcontentsline{toc}{section}{Abstract}
 \input{preliminary_pages/abstract}
-\clearpage
+\cleardoublepage
 
 \addcontentsline{toc}{section}{List of Figures}
 \listoffigures
-\clearpage
+\cleardoublepage
 
 \addcontentsline{toc}{section}{List of Tables}
 \listoftables
-\clearpage
+\cleardoublepage
 
 \addcontentsline{toc}{section}{List of Abbreviations}
 \input{preliminary_pages/abbreviations}
-\clearpage
+\cleardoublepage
 
 %======================================================================
 %  MAIN BODY  --  Arabic numerals, page 1 begins here
@@ -149,19 +135,19 @@
 \pagenumbering{arabic}
 
 \input{sections/chapter1}
-\clearpage
+\newpage
 
 \input{sections/chapter2}
-\clearpage
+\newpage
 
 \input{sections/chapter3}
-\clearpage
+\newpage
 
 \input{sections/chapter4}
-\clearpage
+\newpage
 
 \input{sections/chapter5}
-\clearpage
+\newpage
 
 %----------------------- References -----------------------------------
 \titleformat{\section}[display]
@@ -170,18 +156,15 @@
   {0pt}
   {}[\rule{\textwidth}{0.4pt}]
 
-\addcontentsline{toc}{section}{References}
 \bibliography{references}
-\clearpage
+\addcontentsline{toc}{section}{References}
+\newpage
 
 %======================================================================
-%  APPENDICES  --  Roman numerals resume (guideline H:2(6))
+%  APPENDICES  --  Arabic numbering continues (official UWU template)
 %======================================================================
-\pagenumbering{roman}
-\setcounter{page}{1}
-\renewcommand{\thepage}{A-\roman{page}}
-
-\addcontentsline{toc}{section}{Appendices}
+\addcontentsline{toc}{section}{Appendix}
 \input{sections/appendix}
+\cleardoublepage
 
 \end{document}
