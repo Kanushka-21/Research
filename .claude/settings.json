@@ -11,7 +11,8 @@
       "Bash(rm -f _preview_p*.png)",
       "Bash(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"Tomato Video Project.mp4\")",
       "Bash(rm -f _check_p*.png)",
-      "Bash(cp main.pdf \"../Thesis_LaTeX_Compiled.pdf\")"
+      "Bash(cp main.pdf \"../Thesis_LaTeX_Compiled.pdf\")",
+      "Bash(git status *)"
     ]
   }
 }
