@@ -31,7 +31,7 @@ The following limitations follow from evidence gathered during the study rather 
 
     \item \textbf{One capture setting.} All training images were captured under a single lightbox arrangement at one collecting centre. Performance under substantially different lighting or background beyond what Experiment~3 validated has not been quantified.
 
-    \item \textbf{Shelf life is a static per-class lookup, not a per-fruit prediction.} The value returned is a fixed figure derived from measured stage durations, applied by Equation~\eqref{eq:shelflife} and conditioned only on the detected class. It is not an estimate conditioned on the condition of the individual fruit, and because the point of entry into the detected stage is unobservable it is an upper bound rather than an expected value.
+    \item \textbf{Shelf life is a static per-class lookup, not a per-fruit prediction.} The value returned is a fixed figure derived from measured stage durations, computed as described in Section~\ref{sec:m_shelflife} and conditioned only on the detected class. It is not an estimate conditioned on the condition of the individual fruit, and because the point of entry into the detected stage is unobservable it is an upper bound rather than an expected value.
 
     \item \textbf{Defect class evidence is thin.} The defect class contributes only 66 of the 787 test instances and depends on an augmentation supplement for training balance, so its reported figures carry the widest uncertainty of any class.
 
@@ -52,7 +52,7 @@ The following limitations follow from evidence gathered during the study rather 
 
     \item \textbf{Extend the capture domain.} Deliberately capturing under varied illumination and background, and re-evaluating, would quantify the robustness that the present single-setting dataset cannot.
 
-    \item \textbf{Condition shelf life on the individual fruit.} Predicting remaining shelf life from fruit-level visual features rather than from class membership alone would replace the upper bound of Equation~\eqref{eq:shelflife} with a per-fruit estimate.
+    \item \textbf{Condition shelf life on the individual fruit.} Predicting remaining shelf life from fruit-level visual features rather than from class membership alone would replace the static per-class upper bound of Section~\ref{sec:m_shelflife} with a per-fruit estimate.
 
     \item \textbf{Multi-object tracking.} Maintaining per-fruit identity across frames would lift the single-file constraint and raise achievable throughput.
 \end{enumerate}

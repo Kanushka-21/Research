@@ -4,14 +4,14 @@
 \subsection{Introduction}
 \label{sec:m_intro}
 
-This chapter describes the materials, techniques and procedures used to develop an artificial intelligence based ripening stage detection and sorting system for the Padma tomato variety. The work combines an applied computer vision procedure covering sample collection, dataset construction, model training and evaluation, with an engineering prototyping procedure covering mechanical, electronic and firmware development. The two are brought together in a conveyor prototype that detects a fruit on a moving belt, classifies its ripening stage or defect condition, associates an estimated remaining shelf life with that classification, and diverts the fruit into the corresponding output stream.
+This chapter describes how the tomato ripening detection and sorting system was built. The work has two parts: a computer vision part (collecting images, training and testing a detection model) and an engineering part (building the conveyor, its electronics and its software). Together they form a conveyor prototype that detects a tomato on a moving belt, classifies its ripening stage or defect condition, estimates its remaining shelf life, and diverts it into the correct output stream.
 
-The research was carried out jointly and is divided into three interdependent sub-systems: detection model development with real-time inference and hardware integration; shelf-life estimation and performance-indicator monitoring; and the mechanical conveyor prototype with its actuation. All three are documented here. The chapter follows the order in which the work was carried out. Outcomes are reported in Chapter~\ref{ch:results}, and established standard procedures, full component data and raw records are placed in the appendices.
+The chapter follows the order the work was done in: materials, dataset preparation, model development, real-time detection, hardware and software development, integration, shelf-life observation, and the experiments and tests used to evaluate the system. Results are reported in Chapter~\ref{ch:results}; raw records and full component details are in the appendices.
 
 \subsection{Overall Research Methodology}
 \label{sec:m_overall}
 
-The research followed an applied, iterative development methodology rather than a single-pass linear pipeline, so that the dataset, the annotation convention and the model could each be revised in response to evidence obtained during evaluation. The stages, in the order carried out, were: problem definition; sample collection; image acquisition; dataset preparation, annotation and splitting; preprocessing and augmentation; model development, training, validation and testing; performance evaluation, with dataset and annotation correction and retraining where evaluation exposed a systematic weakness; hardware prototype design and fabrication; software development; hardware and software integration; real-time detection and classification; sorting decision and gate actuation; and system-level evaluation. The workflow, including the correction feedback loop, is shown in Figure~\ref{fig:methodology}.
+The project was developed iteratively rather than in one straight pass, so the dataset, annotation rules and model could be revised whenever evaluation exposed a problem. The stages, in order, were: problem definition; sample collection and image acquisition; dataset preparation, annotation and splitting; preprocessing and augmentation; model training and testing; correcting the dataset and retraining where needed; hardware design and fabrication; software development; hardware and software integration; real-time detection and sorting; and system testing. This workflow, including the correction loop, is shown in Figure~\ref{fig:methodology}.
 
 \begin{figure}[H]
 \centering
@@ -26,7 +26,7 @@ The research followed an applied, iterative development methodology rather than 
 \subsubsection{Tomato Samples}
 \label{sec:m_samples}
 
-Padma variety tomatoes were the biological material of the study. Fruits were obtained from a commercial tomato collecting centre in Bandarawela, Badulla District, to which Padma tomatoes are delivered from several cultivation areas across the region. Sourcing from a multi-farm collecting centre rather than a single farm captures natural variation in fruit size, surface texture, maturity and handling damage within each class. Fruits were visually sorted at the point of capture into the five categories defined in Section~\ref{sec:m_classes}. The materials used are summarised in Table~\ref{tab:materials}.
+Padma variety tomatoes were obtained from a commercial collecting centre in Bandarawela, Badulla District, which receives fruit from several farms in the region. Buying from a multi-farm centre rather than one farm gives natural variation in size, texture, maturity and handling damage. Fruits were sorted by eye at capture into the five categories defined in Section~\ref{sec:m_classes}. Materials used are listed in Table~\ref{tab:materials}.
 
 \begin{table}[H]
 \caption{Materials and samples used in the research}
@@ -37,22 +37,24 @@ Padma variety tomatoes were the biological material of the study. Fruits were ob
 \textbf{Material} & \textbf{Description} & \textbf{Purpose} \\
 \midrule
 Padma tomato fruit &
-Fresh fruit at four ripening stages, and fruit with visible cracking, bruising or rot. Obtained from a commercial collecting centre, Bandarawela, Badulla District &
-Image dataset (Section~\ref{sec:m_dataset}), shelf-life observation (Section~\ref{sec:m_shelflife}) and conveyor testing (Section~\ref{sec:m_experiments}) \\
+Fresh fruit at four ripening stages, and fruit with visible cracking, bruising or rot, from a commercial collecting centre, Bandarawela &
+Image dataset, shelf-life observation and conveyor testing \\
 \addlinespace
 Publicly sourced defect images &
-Third-party defect images used in an earlier dataset version, captured under uncontrolled background and illumination &
-Removed during quality control; not part of the final dataset (Section~\ref{sec:annotation_qc}) \\
+Third-party defect images used in an earlier dataset version, taken under uncontrolled background and lighting &
+Removed during quality control (Section~\ref{sec:annotation_qc}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\TODO{total number of fruits photographed, the capture session dates, and the inclusion and exclusion criteria applied to each class. Sample-level records go in Appendix~A}
+A total of 8{,}000 images were photographed over a 3-day collection period.
+
+\TODO{inclusion/exclusion criteria applied per class -- state what made a captured image acceptable or caused it to be rejected}
 
 \subsubsection{Hardware Components}
 \label{sec:m_hardware}
 
-The prototype is a belt conveyor with a fixed overhead camera and four servo-actuated sorting gates. Its principal components are listed in Table~\ref{tab:hardware}; minor electronic components, the full pin assignment and wiring diagrams are given in Appendix~C.
+The prototype is a belt conveyor with a fixed overhead camera and four servo-actuated sorting gates. Its main components are listed in Table~\ref{tab:hardware}; the full pin assignment and wiring diagrams are in Appendix~C.
 
 \begin{table}[H]
 \caption{Principal hardware components of the conveyor sorting prototype}
@@ -62,48 +64,42 @@ The prototype is a belt conveyor with a fixed overhead camera and four servo-act
 \toprule
 \textbf{Component} & \textbf{Model / specification} & \textbf{Qty} \\
 \midrule
-Microcontroller & ESP32 development board (DOIT DEVKIT V1); runs the sorting firmware and drives the motor driver, servos and sensors & 1 \\
+Microcontroller & ESP32 development board (DOIT DEVKIT V1); runs the sorting firmware & 1 \\
 Drive motor & NEMA 23 stepper motor & 1 \\
-Motor driver & DM542 step-and-direction driver, commanded at 0--2{,}000 steps per second & 1 \\
-Driver power supply & 24\,V, 5\,A & 1 \\
-Logic power supply & 12\,V, 2\,A adapter, stepped down for the logic rail & 1 \\
+Motor driver & DM542 step-and-direction driver & 1 \\
+Power supplies & 24\,V 5\,A driver rail; 12\,V 2\,A logic rail & 1 each \\
 Gate actuators & MG995 servo with printed diverter blade, one per ripening class & 4 \\
-Presence sensors & Infrared reflective sensor, one at each gate position & 4 \\
-Power transmission & 20-tooth motor pulley, 60-tooth roller pulley and closed-loop timing belt, giving a 3:1 reduction & 1 set \\
-Frame and mounts & 25\,mm (1~inch) box-section frame, six bracket-and-bearing assemblies, printed servo and sensor brackets, adjustable single-axis camera mount & 1 set \\
-Speed control & Potentiometer, read by the microcontroller to set belt speed & 1 \\
-Camera & \acrshort{USB} high-definition webcam, operated at 960\,$\times$\,720 pixels and 30~\acrshort{FPS} & 1 \\
+Presence sensors & Infrared reflective sensor, one at each gate & 4 \\
+Power transmission & Motor pulley, roller pulley and timing belt (3:1 reduction) & 1 set \\
+Frame and mounts & 25\,mm box-section frame, bearing assemblies, printed brackets, adjustable camera mount & 1 set \\
+Speed control & Potentiometer read by the microcontroller & 1 \\
+Camera & \acrshort{USB} webcam, 960\,$\times$\,720 pixels, 30~\acrshort{FPS} & 1 \\
 Host computer & Workstation with NVIDIA GeForce RTX 3070 Ti, 8{,}192~\acrshort{MiB} \acrshort{VRAM} & 1 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\TODO{confirm the exact webcam model, and state how the four MG995 servos are powered -- whether from the stepped-down logic rail or a separate regulator. Four MG995 units can draw several amperes together at stall, so the arrangement should be stated explicitly}
-
 \subsubsection{Software and Technologies}
 \label{sec:m_software}
 
-The software environment is listed in Table~\ref{tab:software}. Exact versions are recorded because the behaviour of the training pipeline depends on the specific releases used.
+The software environment is listed in Table~\ref{tab:software}.
 
 \begin{table}[H]
 \caption{Software, frameworks and libraries used in the research}
 \label{tab:software}
 \centering
-\begin{tabularx}{\textwidth}{p{4.3cm} p{3.4cm} X}
+\begin{tabularx}{\textwidth}{p{4.3cm} X}
 \toprule
-\textbf{Software} & \textbf{Version} & \textbf{Purpose} \\
+\textbf{Software} & \textbf{Purpose} \\
 \midrule
-Python & 3.11.9 & Training, inference, dashboard and hardware bridge \\
-PyTorch and torchvision & 2.11.0 and 0.26.0 (\acrshort{CUDA} 12.8) & Deep learning framework \\
-Ultralytics & 8.4.104 & Detection architecture, training, validation, inference \\
-OpenCV & 5.0.0.93 & Camera capture, frame processing, box rendering \\
-Albumentations & Stable release at time of use & Offline bounding-box-aware augmentation \\
-Streamlit and Plotly & 1.60.0 and 6.9.0 & Operator dashboard and charts \\
-SQLite & Bundled with Python 3.11.9 & Local detection and indicator database \\
-NumPy, pandas, PyYAML, pyserial & 2.4.4, 3.0.5, 6.0.3, 3.5 & Numerical work, tabular data, configuration, serial link \\
-Roboflow & Web platform & Annotation and versioned dataset export \\
-PlatformIO, Arduino framework, ESP32Servo & Project pinned; ESP32Servo 3.0.5 & Firmware build, upload and servo control \\
-SolidWorks and Onshape & Computer aided design platforms & Three-dimensional design of the prototype \\
+Python, PyTorch/torchvision, Ultralytics (YOLOv8) & Model training, validation and inference \\
+OpenCV & Camera capture, frame processing, box rendering \\
+Albumentations & Offline bounding-box-aware augmentation \\
+Streamlit and Plotly & Operator dashboard and charts \\
+SQLite & Local detection and indicator database \\
+Roboflow & Annotation and versioned dataset export \\
+PlatformIO, Arduino framework, ESP32Servo & Firmware build, upload and servo control \\
+SolidWorks and Onshape & Three-dimensional design of the prototype \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -111,18 +107,16 @@ SolidWorks and Onshape & Computer aided design platforms & Three-dimensional des
 \subsection{Sampling Method and Sample Collection}
 \label{sec:m_sampling}
 
-Samples were collected using a purposive sampling strategy. Rather than drawing fruits at random, images were deliberately captured across all five target categories so that the dataset contained adequate representation of every category the model was required to learn, including the comparatively uncommon defect condition. Purposive sampling is appropriate here because the objective is model generalisation across defined visual categories for a supervised detection task, not population-level inference about the distribution of ripening stages in the crop \citep{etikan2016}.
+Images were collected purposively rather than randomly: fruit was deliberately photographed across all five target categories so that even the comparatively uncommon defect condition was well represented \citep{etikan2016}.
 
-Collection began in January 2026 and continued over several sessions. All fruits were photographed in a white-box lightbox under \acrshort{LED} illumination, which standardises background and illumination between sessions and removes lighting as an uncontrolled source of variation between classes. This control is essential rather than cosmetic: as Section~\ref{sec:annotation_qc} records, a class captured under different conditions from the rest allowed the detector to learn the imaging conditions instead of the fruit.
+Collection began in January 2026. All dataset images were photographed with the fruit against a white background inside a lightbox under \acrshort{LED} illumination, keeping background and lighting the same across sessions and classes. This mattered: as Section~\ref{sec:annotation_qc} describes, a class photographed under different conditions from the rest let the model learn the lighting instead of the fruit.
 
 \subsection{Image Acquisition}
 \label{sec:m_acquisition}
 
-Dataset images were acquired with the fruit placed against a white background inside the lightbox. The same arrangement was used for all five classes in the final dataset.
+Live deployment uses a separate camera path from dataset capture. For real-time inference the system uses the \acrshort{USB} webcam mounted above the conveyor, at 960\,$\times$\,720 pixels and 30~\acrshort{FPS}. After start-up, the camera's automatic exposure and white balance are given about 1.5~seconds to settle before any frame is passed to the model, since frames grabbed during that window can have colour casts strong enough to change the predicted class.
 
-The deployment path is separate. For real-time inference the system uses a \acrshort{USB} webcam connected to the host computer, opened at 960\,$\times$\,720 pixels and 30~\acrshort{FPS}. After initialisation, automatic exposure and white balance are allowed approximately 1.5~seconds to settle before any frame is passed to the model, because frames captured during this interval carry colour casts severe enough to alter the predicted class.
-
-\TODO{camera model, native resolution and file format used for dataset capture; the camera-to-fruit distance and viewing angle; whether several orientations of the same fruit were deliberately captured and how many; and any image-quality rejection step applied at capture time}
+\TODO{camera model and file format used for dataset capture; camera-to-fruit distance and viewing angle; whether multiple orientations of the same fruit were captured}
 
 \begin{figure}[H]
 \centering
@@ -134,7 +128,7 @@ The deployment path is separate. For real-time inference the system uses a \acrs
 \subsection{Dataset Description}
 \label{sec:m_dataset}
 
-The dataset is a versioned export produced through the Roboflow annotation and dataset management platform \citep{dwyer2024}, exported in the YOLOv8 label format. Its composition is summarised in Table~\ref{tab:dataset} and the per-class distribution of annotated object instances in Table~\ref{tab:instances}. Instance counts differ from image counts because an image may contain more than one annotated fruit. The offline augmentation supplement is listed in a separate column throughout, so that synthetic data is never confused with captured data.
+The dataset was built and versioned in Roboflow \citep{dwyer2024} and exported in the YOLOv8 label format. Its composition is summarised in Table~\ref{tab:dataset} and the per-class counts in Table~\ref{tab:instances}. Instance counts are higher than image counts because one image can contain more than one fruit. The images added to boost the defect class (Section~\ref{sec:m_preprocessing}) are always listed separately, so synthetic and captured data are never mixed together in a single figure.
 
 \begin{table}[H]
 \caption{Composition of the dataset used for model development}
@@ -145,15 +139,12 @@ The dataset is a versioned export produced through the Roboflow annotation and d
 \textbf{Property} & \textbf{Value} \\
 \midrule
 Number of classes & 5 (breaker, defect, green, red, turning) \\
-Training images & 5{,}498 captured, plus 668 offline-augmented defect images (Section~\ref{sec:m_preprocessing}) \\
+Training images & 5{,}498 captured, plus 668 offline-augmented defect images \\
 Validation images & 1{,}574 \\
 Test images (held out) & 777 \\
 Total distinct captured images & 7{,}849 \\
-Annotated instances, captured images only & 7{,}920 \\
-Annotated instances, including the augmentation supplement & 8{,}816 \\
 Annotation format & YOLO normalised bounding box: class index, $x$ centre, $y$ centre, width, height \\
 Model input resolution & 640\,$\times$\,640 pixels after resizing \\
-Hosting and version control & Roboflow versioned export, Creative Commons Attribution 4.0 \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -178,7 +169,7 @@ turning & 1{,}138 & 0   & 309 & 149 & 1{,}596 \\
 \end{tabular}
 \end{table}
 
-The defect class holds only 66 annotated instances in the test split, against 149--191 for each ripening class. Any performance figure reported for the defect class therefore carries appreciably wider uncertainty than the others, and this is accounted for in the evaluation procedure of Section~\ref{sec:m_evaluation}.
+The defect class has only 66 test instances, against 149--191 for each ripening class, so it is treated with more caution in the evaluation approach of Section~\ref{sec:m_evaluation}.
 
 \begin{figure}[H]
 \centering
@@ -190,9 +181,9 @@ The defect class holds only 66 annotated instances in the test split, against 14
 \subsection{Ripening Stage Classification Criteria}
 \label{sec:m_classes}
 
-Five mutually exclusive target classes were defined: four ripening stages and one quality class. Defect was defined as a separate class rather than as an attribute of a ripening class, because damaged fruit requires the same handling irrespective of its colour.
+Five classes were defined: four ripening stages and one quality class. Defect is a separate class rather than a property of a ripening class, because damaged fruit is handled the same way no matter what colour it is.
 
-The four ripening stages are obtained by merging adjacent pairs of the six \acrshort{USDA} stages \citep{usda1991}, as reproduced in Table~\ref{tab:abekoon_stages}. Two considerations drove the merge. First, four classes map directly onto a four-gate sorting mechanism. Second, and more importantly, the two narrowest \acrshort{USDA} bands sit exactly where camera-based estimation of red surface proportion is least stable, so merging them produces boundaries that a detector can separate reliably under belt motion and specular reflection. The correspondence is set out in Table~\ref{tab:merge}, and the resulting criteria in Table~\ref{tab:ripeness}.
+The four ripening stages come from merging adjacent pairs of the six standard \acrshort{USDA} maturity stages \citep{usda1991}, the same approach \citet{abekoon2024} used for this variety. Four classes map directly onto the four sorting gates, and the two narrowest standard bands sit exactly where a camera struggles most to judge red surface percentage, so merging them gives boundaries the model can separate reliably on a moving belt. The correspondence is in Table~\ref{tab:merge}, and the resulting criteria in Table~\ref{tab:ripeness}.
 
 \begin{table}[H]
 \caption{Correspondence between the six standard maturity stages and the four operational classes used in this research}
@@ -215,7 +206,7 @@ Red        & $>$ 90\,\%  & Red     & $>$ 80\,\% \\
 \end{tabular}
 
 \vspace{2mm}
-{\footnotesize Standard stages and their boundaries from \citet{usda1991}. The operational upper boundary of the turning class is set at 80\,\% rather than 90\,\% so that fully coloured fruit is captured by the red class under belt lighting.}
+{\footnotesize Standard stages and boundaries from \citet{usda1991}. The operational upper boundary of the turning class is set at 80\,\% rather than 90\,\% so that fully coloured fruit falls into the red class under belt lighting.}
 \end{table}
 
 \begin{table}[H]
@@ -226,11 +217,11 @@ Red        & $>$ 90\,\%  & Red     & $>$ 80\,\% \\
 \toprule
 \textbf{Class} & \textbf{Stage} & \textbf{Identification characteristics} \\
 \midrule
-Green   & Unripe (Stage 1)             & Entirely green skin, with no red or orange colouration \\
-Breaker & Onset of ripening (Stage 2)  & Green to yellow transition, with less than 30\,\% of the surface red or pink \\
-Turning & Mid ripening (Stage 3)       & Between 30\,\% and 80\,\% of the surface red, with mixed green, orange and red patches \\
-Red     & Fully ripe (Stage 4)         & More than 80\,\% of the surface red, with uniform ripe colouration \\
-Defect  & Rejected quality             & Visible cracking, bruising or rot; may occur at any stage and receives no ripening label \\
+Green   & Unripe (Stage 1)             & Entirely green skin, no red or orange colouration \\
+Breaker & Onset of ripening (Stage 2)  & Green-to-yellow transition, less than 30\,\% red or pink \\
+Turning & Mid ripening (Stage 3)       & 30--80\,\% of the surface red, mixed green/orange/red patches \\
+Red     & Fully ripe (Stage 4)         & More than 80\,\% of the surface red, uniform ripe colouration \\
+Defect  & Rejected quality             & Visible cracking, bruising or rot; can occur at any stage, receives no ripening label \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -238,13 +229,9 @@ Defect  & Rejected quality             & Visible cracking, bruising or rot; may 
 \subsection{Image Annotation}
 \label{sec:m_annotation}
 
-\subsubsection{Annotation Tool and Format}
+All images were annotated in Roboflow \citep{dwyer2024} and exported in the YOLOv8 format, where each image has a label file with one line per annotated fruit: a class index followed by the box's position and size.
 
-All images were annotated in Roboflow \citep{dwyer2024} and exported in the YOLOv8 format, in which each image is accompanied by a plain-text label file containing one line per annotated object. Each line specifies a class index followed by four normalised bounding-box coordinates, namely $x$ centre, $y$ centre, width and height, expressed as fractions of the image dimensions.
-
-\subsubsection{Annotation Convention}
-
-Every fruit visible in an image was annotated individually with its own whole-fruit bounding box and a single class label, so that an image containing several fruits carries a corresponding number of annotations. For the defect class the convention is a whole-fruit bounding box rather than a polygon isolating the blemished region, labelled defect irrespective of the underlying ripening colour. A uniform box convention across all classes is essential, because a detector implicitly learns the object-scale statistics of each class: a class annotated with systematically smaller boxes than the others is being taught a different object size as well as a different appearance.
+Every fruit visible in an image was given its own box and a single class label. For the defect class the box still covers the whole fruit, not just the blemish, and is labelled defect regardless of the fruit's underlying colour. Keeping the box style the same across classes matters, because the model also learns the typical size of the box for each class along with its appearance.
 
 \begin{figure}[H]
 \centering
@@ -256,32 +243,28 @@ Every fruit visible in an image was annotated individually with its own whole-fr
 \subsubsection{Annotation Quality Control and Correction}
 \label{sec:annotation_qc}
 
-Annotation was subject to a review and correction cycle. Two corrections applied during that cycle determined the final composition of the dataset, and both are documented because they materially shaped the method.
+Annotation went through a review and correction cycle. Two corrections shaped the final dataset.
 
-\textbf{Inconsistent box geometry.} Defect images originally drawn from a public dataset had been annotated with polygons enclosing only the blemished region, while the project's own images used whole-fruit boxes. Every such image was re-annotated under the whole-fruit convention so that box geometry was consistent across all five classes.
+\textbf{Inconsistent box style.} Defect images taken from a public dataset had been boxed around only the blemished area, while the project's own images boxed the whole fruit. Every such image was re-annotated to the whole-fruit style so all five classes were consistent.
 
-\textbf{Imaging conditions acting as a class cue.} Even after box geometry was made consistent, live camera testing showed healthy breaker, turning and red fruit being classified as defect, a failure not visible in the offline metrics. The cause was that the defect images were still drawn largely from a public dataset with uncontrolled backgrounds and illumination, while the four ripening classes had been captured entirely inside the lightbox. The detector had partly learned the imaging conditions as the distinguishing feature of the defect class, exactly the confound described in Section~\ref{sec:domainshift}. The correction was to remove the mismatched images entirely, capture and annotate new defect images under the same lightbox conditions and convention as the other classes, and apply the class-balancing augmentation of Section~\ref{sec:m_preprocessing} to compensate for the smaller number of real defect images remaining. The dataset described in Section~\ref{sec:m_dataset} is the corrected export.
+\textbf{Lighting acting as a false class cue.} Even after the box style was fixed, live camera tests showed healthy breaker, turning and red fruit being wrongly classified as defect. The cause was that most defect images still came from the public dataset, with different backgrounds and lighting from the other four classes, which had all been shot inside the lightbox. The model had partly learned the lighting, not the damage, as the sign of a defect. The fix was to drop the mismatched public images, capture and label new defect images under the same lightbox conditions as the other classes, and use the offline augmentation described in Section~\ref{sec:m_preprocessing} to make up for the smaller number of real defect photos that remained. The dataset in Section~\ref{sec:m_dataset} is this corrected version.
 
-\textbf{Annotation reliability.} The class boundaries in Table~\ref{tab:ripeness} are defined by the proportion of red surface, estimated visually rather than measured instrumentally. To establish the repeatability of that judgement, a random sample of images was re-annotated independently and agreement between the two passes computed.
-
-\TODO{the size of the re-annotated sample, and the resulting agreement statistic. If no reliability check has yet been performed, it should be carried out before submission: with visually judged percentage boundaries and no colorimetric measurement, label reliability is otherwise unevidenced}
+\TODO{report the annotation reliability check: sample size re-annotated independently and the resulting agreement figure, since class boundaries are judged by eye rather than measured}
 
 The detailed annotation procedure is given in Appendix~A.
 
 \subsection{Image Preprocessing and Augmentation}
 \label{sec:m_preprocessing}
 
-\textbf{Resizing.} All images are resized to 640\,$\times$\,640 pixels at both training and inference time, since a fixed input size is required for batched processing and this is the standard operating resolution of the architecture. Pixel-value scaling is handled internally by the framework, and no background subtraction or segmentation step is applied.
+All images are resized to 640\,$\times$\,640 pixels for both training and inference, the standard input size for the architecture.
 
-\textbf{Training-time augmentation.} Augmentation was applied on the fly by the framework's built-in pipeline, using the parameter values listed in Table~\ref{tab:training}. It combines hue, saturation and value jitter, rotation, translation and scaling, horizontal flipping with vertical flipping disabled because fruit on a belt is not observed inverted, mosaic augmentation closed for the final ten epochs, mixup, random erasing and automated policy selection. Augmentation of this kind is standard practice for improving generalisation from limited data \citep{shorten2019}, and is applied here because live conveyor conditions differ from the lightbox conditions of capture.
+During training, images are augmented on the fly: colour jitter, rotation, translation, scaling, horizontal flipping (never vertical, since fruit on a belt is never upside down), mosaic, mixup and random erasing. This kind of augmentation is standard practice for improving generalisation from limited data \citep{shorten2019}, used here because live conveyor conditions differ from the lightbox conditions the dataset was captured in.
 
-\textbf{Offline augmentation of the defect class.} After the corrections of Section~\ref{sec:annotation_qc}, the defect class retained 448 training instances against 1{,}137--1{,}434 for each ripening class. A separate offline step was therefore applied to its training images using the Albumentations library \citep{buslaev2020}, which transforms bounding boxes together with the image. Flip, rotation, scale, brightness and hue-jitter transforms were applied to the 334 defect-only training images, producing two augmented copies of each and yielding 668 additional images carrying 896 additional instances. These were referenced only from the training split. The validation and test splits were left untouched, so that every reported evaluation figure is measured against captured images alone.
+After the corrections in Section~\ref{sec:annotation_qc}, the defect class had far fewer real training images than the ripening classes. Its training images were therefore supplemented offline using Albumentations \citep{buslaev2020}: flip, rotation, scale, brightness and hue changes produced two augmented copies of each defect training image. These extra images were used only for training; the validation and test sets contain captured images only.
 
-\textbf{Dataset audit.} An automated audit runs before every training run and halts it on a structural fault. It verifies the class-name order, confirms that a test split is present, computes per-split and per-class instance counts, flags orphaned images and empty label files, detects duplicate images leaking across splits by message-digest hashing, and flags any class whose mean relative bounding-box area falls below 35\,\% of the median across classes. The last check was added specifically after the box-geometry fault described above, so that an inconsistent annotation convention cannot pass unnoticed into training again.
+An automated check runs before every training run and stops it if something is structurally wrong: it confirms the class list, checks a test split exists, counts images and instances per class, flags missing or empty label files and duplicate images, and flags any class whose boxes are unusually small compared to the others. That last check was added after the box-style problem above, so an inconsistent box convention cannot slip into training again unnoticed.
 
-\textbf{Limitation of the duplicate check.} Message-digest hashing detects only byte-identical images. Because several photographs were taken of each fruit, and the export was split at the level of the individual image, near-duplicate views of the same physical fruit could in principle be distributed across splits, which would optimistically bias the reported metrics.
-
-\TODO{state whether images of one physical fruit were confined to a single split. If they were not, either re-split the dataset grouped by fruit identity and retrain, or report this explicitly as a limitation on the reported metrics in Chapter~5}
+\TODO{confirm whether images of one physical fruit were confined to a single split; several photos were taken per fruit, and if the same fruit ended up split across train/validation/test, that is a limitation on the reported metrics}
 
 \begin{figure}[H]
 \centering
@@ -293,7 +276,7 @@ The detailed annotation procedure is given in Appendix~A.
 \subsection{Dataset Splitting}
 \label{sec:m_splitting}
 
-The dataset was divided into training, validation and test subsets at export time in the proportions given in Table~\ref{tab:split}, corresponding to a conventional 70:20:10 division. The training set fits model parameters, the validation set monitors generalisation and selects the best checkpoint through early stopping, and the test set is used once to obtain an unbiased estimate of performance. It was kept fully held out, including from the offline augmentation.
+The dataset was split into training, validation and test sets at export time, in the proportions in Table~\ref{tab:split}, a standard 70:20:10 split. Training fits the model, validation is checked after every epoch to choose the best checkpoint, and the test set is used only once, at the end, to measure final performance.
 
 \begin{table}[H]
 \caption{Dataset split used for model development}
@@ -303,9 +286,9 @@ The dataset was divided into training, validation and test subsets at export tim
 \toprule
 \textbf{Subset} & \textbf{Images} & \textbf{Percentage} & \textbf{Role} \\
 \midrule
-Training   & 5{,}498 & 70.0\,\% & Fitting of model parameters; supplemented with 668 augmented defect images \\
-Validation & 1{,}574 & 20.1\,\% & Monitoring generalisation, early stopping and checkpoint selection \\
-Test       & 777   & 9.9\,\%  & Held out from training and checkpoint selection; used once for final evaluation \\
+Training   & 5{,}498 & 70.0\,\% & Fitting model parameters; supplemented with 668 augmented defect images \\
+Validation & 1{,}574 & 20.1\,\% & Monitoring generalisation, early stopping, checkpoint selection \\
+Test       & 777   & 9.9\,\%  & Held out from training; used once for final evaluation \\
 \midrule
 \textbf{Total} & \textbf{7{,}849} & \textbf{100\,\%} & \\
 \bottomrule
@@ -315,11 +298,11 @@ Test       & 777   & 9.9\,\%  & Held out from training and checkpoint selection;
 \subsection{Model Development}
 \label{sec:m_model}
 
-The system uses YOLOv8, a single-stage convolutional object detection architecture, for simultaneous localisation and classification, in the medium-capacity YOLOv8m variant, initialised from publicly released pre-trained weights and fine-tuned on the project dataset. The \acrshort{YOLO} family performs localisation and classification in a single forward pass, predicting bounding boxes and class probabilities directly from the full image without a separate region-proposal stage \citep{redmon2016, terven2023}.
+The system uses YOLOv8, an object detection architecture that finds and classifies objects in a single pass over the image, without a separate step to first propose regions of interest \citep{redmon2016, terven2023}. The medium-sized YOLOv8m variant was used, starting from publicly released pre-trained weights and then fine-tuned on the project's own dataset.
 
-This architecture was selected because a frame above the conveyor may contain more than one fruit at different ripening stages, and the sorting logic requires a bounding box, class label and confidence score for each at a frame rate compatible with belt speed. Published comparison supports the choice for this task \citep{safira2026}. The medium variant was chosen as a compromise between accuracy and the memory available on the 8~GB host. No post-hoc classification stage is applied: the decision is the class prediction of the detector itself, aggregated across frames by the policy of Section~\ref{sec:m_realtime}.
+This architecture fits the task well: a single camera frame above the conveyor can contain more than one fruit at different ripening stages, and the sorting logic needs a box, a class and a confidence score for each one, fast enough to keep up with the belt. Published work supports this choice for tomato detection \citep{safira2026}, and the medium variant balances accuracy against the memory available on the host \acrshort{GPU}. No separate classification step is used afterwards -- the sorting decision is the detector's own prediction, combined across frames as described in Section~\ref{sec:m_realtime}.
 
-Because architecture choice ought to rest on evidence from this dataset rather than on published results from others, a second detector was trained under identical data conditions for comparison, as described in Section~\ref{sec:m_experiments}, Experiment~2.
+A second detector (YOLO26m) was also trained on the same data, so the architecture choice could be checked against this project's own evidence rather than published results alone; this comparison is Experiment~2 in Section~\ref{sec:m_experiments}.
 
 \begin{figure}[H]
 \centering
@@ -331,7 +314,7 @@ Because architecture choice ought to rest on evidence from this dataset rather t
 \subsection{Model Training}
 \label{sec:m_training}
 
-Training was performed locally rather than on a cloud service, on a workstation with an NVIDIA GeForce RTX 3070 Ti \acrshort{GPU} of 8{,}192~\acrshort{MiB} \acrshort{VRAM}, running Python 3.11.9, PyTorch 2.11.0 built against \acrshort{CUDA} 12.8 and Ultralytics 8.4.104. Because a single 8~GB device was used, the training script performs automatic batch-size selection and a pre-flight check of available video memory before the run begins. The configuration applied is given in Table~\ref{tab:training}, and the complete configuration file is reproduced in Appendix~B.
+Training was done locally on a workstation with an NVIDIA GeForce RTX 3070 Ti \acrshort{GPU} (8{,}192~\acrshort{MiB} \acrshort{VRAM}). Because this GPU has limited memory, the training script automatically picks a safe batch size and checks free memory before each run starts. The configuration used is in Table~\ref{tab:training}; the full configuration file is in Appendix~B.
 
 \begin{table}[H]
 \caption{Training configuration used for model development}
@@ -345,94 +328,42 @@ Base architecture & YOLOv8m, initialised from pre-trained weights \\
 Training data & 5{,}498 captured images and 668 offline-augmented defect images \\
 Maximum epochs and early stopping & 150 epochs; halts after 25 epochs without validation improvement \\
 Batch size and input size & Automatic selection; 640\,$\times$\,640 pixels \\
-Optimiser & Automatic selection \\
-Initial learning rate and final factor & 0.01 and 0.01 \\
-Momentum and weight decay & 0.937 and 0.0005 \\
-Warm-up epochs & 3.0 \\
-Loss term weights & Box 7.5, classification 0.5, \acrfull{DFL} 1.5 \\
-Colour augmentation & Hue 0.015, saturation 0.7, value 0.4 \\
-Geometric augmentation & Rotation 15\textdegree; translation 0.1; scale 0.5; horizontal flip 0.5; vertical flip disabled \\
-Composite augmentation & Mosaic 1.0, closed for the final 10 epochs; mixup 0.15; random erasing 0.4; automated policy selection \\
+Initial learning rate & 0.01 \\
+Augmentation & Colour jitter; rotation, translation, scale; horizontal flip only; mosaic, mixup and random erasing \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The training procedure runs in five steps: a pre-flight check of the framework installation, device availability and free video memory; the dataset audit of Section~\ref{sec:m_preprocessing}, which halts the run if a structural fault is found; training with the configuration of Table~\ref{tab:training}, evaluated against the validation split after every epoch, with the best checkpoint written to disk and intermediate checkpoints saved every five epochs; early stopping once the patience limit is reached, restoring the best checkpoint as the final model; and a separate evaluation pass of that checkpoint against the held-out test split.
+Training runs in five steps: check the framework, device and free memory are ready; run the dataset audit from Section~\ref{sec:m_preprocessing}, which stops the run if something is wrong; train using the settings above, checking performance on the validation set after every epoch and saving the best checkpoint; stop early once performance stops improving, and keep the best checkpoint as the final model; then run one separate evaluation pass of that checkpoint on the held-out test set.
 
 \subsection{Validation and Evaluation Procedure}
 \label{sec:m_evaluation}
 
-The validation split was used throughout training to monitor generalisation after every epoch, independently of the training data. Early stopping on a held-out split, rather than manual inspection of a learning curve, is the mechanism used to guard against overfitting, because it applies a fixed and reproducible criterion. The test split was evaluated exactly once, so that the figures reported in Chapter~\ref{ch:results} are an unbiased estimate rather than values the model was tuned towards.
+The validation set was checked after every epoch during training to catch overfitting early, using a fixed stopping rule rather than manual judgement. The test set was evaluated only once, so the figures reported in Chapter~\ref{ch:results} are an honest estimate rather than numbers the model was tuned towards.
 
-The standard object detection metrics defined below were computed per class and as a class-averaged mean \citep{padilla2020}. Precision, in Equation~\eqref{eq:precision}, is the proportion of predicted detections of a class that are correct.
+Performance is measured with the standard object detection metrics \citep{padilla2020}: precision (how many of the model's positive predictions were correct), recall (how many of the real fruits of a class were actually found), an $F_1$ score that balances the two (used to pick the confidence threshold used at deployment), and mean average precision at a looser overlap threshold (mAP@50) and a stricter one that also rewards a tightly placed box (mAP@50--95). A confusion matrix is also produced to show which classes get mixed up with each other; as Section~\ref{sec:annotation_qc} shows, this diagnostic caught a problem that the summary numbers alone did not.
 
-\begin{equation}
-    \text{Precision} = \frac{\mathrm{TP}}{\mathrm{TP} + \mathrm{FP}}
-    \label{eq:precision}
-\end{equation}
+Because the test set is limited in size -- and the defect class especially, with only 66 instances -- a confidence interval is calculated for each reported metric by resampling the test set, so a difference between two models is only treated as real when the intervals do not overlap.
 
-where $\mathrm{TP}$ is the number of true positive detections and $\mathrm{FP}$ the number of false positive detections. Recall, in Equation~\eqref{eq:recall}, is the proportion of actual instances of a class that were successfully detected.
-
-\begin{equation}
-    \text{Recall} = \frac{\mathrm{TP}}{\mathrm{TP} + \mathrm{FN}}
-    \label{eq:recall}
-\end{equation}
-
-where $\mathrm{FN}$ is the number of false negatives, that is, ground-truth instances the model failed to detect. The $F_1$ score, in Equation~\eqref{eq:f1}, is the harmonic mean of precision and recall, and was used to identify the confidence threshold at which the two are jointly optimised.
-
-\begin{equation}
-    F_1 = \frac{2 \times \text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
-    \label{eq:f1}
-\end{equation}
-
-Mean average precision, in Equation~\eqref{eq:map}, is the mean across classes of the average precision of each class, where the average precision $AP_i$ of class $i$ is the area under its precision--recall curve.
-
-\begin{equation}
-    \mathrm{mAP} = \frac{1}{N}\sum_{i=1}^{N} AP_i
-    \label{eq:map}
-\end{equation}
-
-where $N$ is the number of classes. Two variants were computed: mAP@50, which counts a detection as a true positive when its box overlaps the ground truth by at least 0.50 \acrfull{IoU} and the class matches; and mAP@50--95, which averages the metric over thresholds from 0.50 to 0.95 in steps of 0.05 and therefore also rewards precise localisation. A confusion matrix was generated as a diagnostic to identify which classes are confused with one another; as Section~\ref{sec:annotation_qc} shows, that diagnostic revealed a fault the aggregate metrics did not.
-
-\textbf{Uncertainty.} Because the test split is finite, and the defect class in particular contributes only 66 instances, point estimates alone would overstate the precision of the comparison in Experiment~2. A non-parametric bootstrap over the test images was therefore used to obtain a 95\,\% confidence interval for each reported metric, resampling the test set with replacement 1{,}000 times and recomputing the metric on each resample. Differences between model configurations are treated as meaningful only where the intervals do not overlap.
-
-System-level indicator data, comprising fruits processed, class distribution, defect ratio, throughput and mean estimated shelf life, is computed by direct aggregation over the detection log and is descriptive rather than inferential.
+System-level figures -- fruits processed, class distribution, defect ratio, throughput and average shelf life -- are simply totalled directly from the detection log.
 
 \subsection{Real Time Detection Process}
 \label{sec:m_realtime}
 
-The procedure applied at inference time proceeds through the following steps.
+At run time the system works through the following steps for every frame.
 
 \begin{enumerate}
     \item \textbf{Frame capture.} A live frame is captured from the webcam at 960\,$\times$\,720 pixels and 30~\acrshort{FPS}.
     \item \textbf{Preprocessing.} The frame is resized to the 640\,$\times$\,640 pixel model input size.
-    \item \textbf{Inference.} The frame is passed through the trained model at a confidence threshold of 0.45, selected as the approximately $F_1$-optimal operating point identified from Equation~\eqref{eq:f1} and the corresponding curve.
-    \item \textbf{Non-tomato object filtering.} A secondary general-purpose detector, pre-trained on a large-scale everyday-object dataset \citep{lin2014}, is run on the same frame at a confidence threshold of 0.35 and an \acrshort{IoU} threshold of 0.3, to identify distractors such as bottles, cups, telephones and hands. Any tomato detection overlapping a distractor is suppressed. This stage is necessary because the tomato model has no negative class for the objects that appear near an operating conveyor, and would otherwise assign one of its five labels to whatever enters the frame.
-    \item \textbf{Tracking and vote accumulation.} A tracking state machine with idle and tracking states follows a single fruit across consecutive frames, assuming single-file flow, and accumulates one class vote per frame. A track closes after 0.6~seconds without detection, and a minimum of two frames is required for a track to count.
-    \item \textbf{Classification finalisation.} When a track closes, the final class is decided by a confidence-weighted vote, given in Equation~\eqref{eq:vote}, over the set $F$ of frames in the track.
+    \item \textbf{Inference.} The frame is passed through the trained model at a confidence threshold of 0.45, the point where precision and recall are best balanced.
+    \item \textbf{Non-tomato object filtering.} A second, general-purpose detector trained on everyday objects \citep{lin2014} checks the same frame for things like bottles, cups, phones and hands. Any tomato detection that overlaps one of these is discarded, since the tomato model itself has no way to recognise an object that isn't a tomato.
+    \item \textbf{Tracking and vote accumulation.} A simple tracker follows one fruit at a time across frames and records a class vote from each frame it appears in. A track ends after 0.6~seconds with no detection, and needs at least two frames to count.
+    \item \textbf{Classification finalisation.} When a track ends, the final class is the one with the most weight once each frame's vote is scaled by how confident the model was in it. Deciding from several frames rather than one makes the result more robust to a fruit briefly rotating or catching a bright reflection.
 \end{enumerate}
 
-\begin{equation}
-    \hat{c} = \arg\max_{c \in C} \sum_{f \in F} s_{f,c} \cdot \mathbf{1}\!\left[ c_f = c \right]
-    \label{eq:vote}
-\end{equation}
+The defect class has one extra, deliberately strict rule: it is only chosen as the final answer if it was voted in a clear majority of the fruit's frames and with consistently high confidence. This is a deliberate trade-off -- wrongly rejecting a good fruit loses money permanently, while letting a borderline one through can still be caught later -- and it also gives a second safeguard against the lighting confound described in Section~\ref{sec:annotation_qc}.
 
-where $C$ is the set of five classes, $c_f$ is the class predicted in frame $f$, and $s_{f,c}$ is the confidence assigned to class $c$ in that frame. Aggregating over a track rather than trusting a single frame is what makes the decision robust to the momentary misclassifications that occur as a fruit rotates or passes through a specular highlight.
-
-An override applies to the defect class. Defect is selected as the final class only if the three conditions in Equation~\eqref{eq:defect} hold simultaneously:
-
-\begin{equation}
-    n_d \geq 2
-    \quad \wedge \quad
-    \frac{n_d}{|F|} \geq 0.35
-    \quad \wedge \quad
-    \min_{f \in F_d} s_{f,\text{defect}} \geq 0.80
-    \label{eq:defect}
-\end{equation}
-
-where $F_d \subseteq F$ is the subset of frames voting defect and $n_d = |F_d|$. The rule is deliberately conservative, and it encodes a cost asymmetry rather than a statistical one: wrongly rejecting a saleable fruit removes revenue permanently, whereas passing a marginal fruit is recoverable downstream. It also provides a second line of defence against any residual trace of the confound identified in Section~\ref{sec:annotation_qc}.
-
-Finally, the finalised class, its confidence and the shelf-life value from the lookup of Section~\ref{sec:m_shelflife} are written to the database and, when hardware is connected, converted into a sorting command as described in Section~\ref{sec:m_integration}.
+The final class, its confidence and its shelf-life value (Section~\ref{sec:m_shelflife}) are then written to the database and, if the hardware is connected, turned into a sorting command as described in Section~\ref{sec:m_integration}.
 
 \begin{figure}[H]
 \centering
@@ -444,13 +375,13 @@ Finally, the finalised class, its confidence and the shelf-life value from the l
 \subsection{Hardware Prototype Development}
 \label{sec:m_prototype}
 
-The conveyor frame was constructed from 25\,mm metal box-section bar to dimensions first validated in a three-dimensional \acrfull{CAD} model, and painted for durability. The belt is driven by a NEMA~23 stepper motor coupled to the drive roller through a 20-tooth motor pulley, a 60-tooth roller pulley and a closed-loop timing belt, giving a 3:1 reduction, with six bracket-and-bearing assemblies supporting roller rotation. The motor is commanded through a DM542 driver over a step-and-direction interface at 0 to 2{,}000 steps per second, with belt speed set by a potentiometer read by the microcontroller. An adjustable single-axis camera mount allows camera position and angle to be tuned on the assembled rig.
+The conveyor frame was built from 25\,mm metal box-section bar, to dimensions first checked in a \acrfull{CAD} model. The belt is driven by a NEMA~23 stepper motor through a 3:1 pulley-and-belt reduction, supported on bearing assemblies. The motor is commanded through a DM542 driver, with belt speed set by a potentiometer read by the microcontroller. An adjustable camera mount lets position and angle be tuned on the finished rig.
 
-Four infrared sensors and four servo-actuated gates are installed, one pair for each ripening class. The defect class is intentionally not assigned a gate: fruit classified as defective receives no actuation command and continues to the end of the belt into a single reject stream, which removes one gate from the mechanism without loss of function.
+Four infrared sensors and four servo gates are fitted, one pair per ripening class. The defect class deliberately has no gate: a fruit classified as defective gets no command and simply carries on to the end of the belt into a single reject stream.
 
-The physical arrangement along the belt is important to the control logic of Section~\ref{sec:m_integration} and is therefore stated explicitly. Working downstream from the camera, the gates are encountered in the order red, turning, breaker, green. Each gate has an infrared sensor mounted at its own position, immediately upstream of the diverter blade. Each servo is driven from a dedicated digital output and each sensor read on a dedicated digital input; the class-to-servo assignment is fixed in firmware and cross-checked against the mapping used by the host application. Each gate rests at 180\textdegree{} and rotates to 110\textdegree{} to divert, a sweep of 70\textdegree, returning automatically after a hold interval.
+The order of the gates matters for the control logic in Section~\ref{sec:m_integration}: going downstream from the camera, the gates are encountered as red, turning, breaker, green. Each gate has its own sensor just before its diverter blade, and its own dedicated servo and sensor wiring, with the class-to-gate mapping fixed in firmware. Each gate rests at 180\textdegree{} and swings to 110\textdegree{} to divert a fruit, then returns automatically.
 
-The controller is a single ESP32 board, powered from a 24\,V supply on the driver side and a 12\,V adapter on the logic side, so that stepper and servo transients cannot disturb the logic supply. The pin assignment and wiring diagram are given in Appendix~C.
+A single ESP32 board controls everything, powered from a 24\,V supply on the motor side and a separate 12\,V supply on the logic side, so motor and servo noise cannot disturb the control electronics. The pin assignment and wiring diagram are in Appendix~C.
 
 \begin{figure}[H]
 \centering
@@ -462,9 +393,9 @@ The controller is a single ESP32 board, powered from a 24\,V supply on the drive
 \subsection{Software System Development}
 \label{sec:m_softwaredev}
 
-The software system is a Python application built around a web-based operator dashboard, supported by a detection module and a local relational database. The dashboard presents a live camera feed with drawn bounding boxes; a session panel showing tracker state, the running count of fruits processed and the class and confidence of the most recent fruit; an indicator panel with a selectable time window reporting total fruits processed, throughput, defect ratio and mean estimated shelf life; a class-distribution chart; and a table of recent detections.
+The software is a Python application built around a web-based operator dashboard, backed by a detection module and a local database. The dashboard shows a live camera feed with boxes drawn on it; the current tracking state and the most recent fruit's class and confidence; an indicator panel with fruits processed, throughput, defect ratio and average shelf life over a chosen time window; a class-distribution chart; and a table of recent detections.
 
-The model is loaded once and cached for the session, with a selector for choosing among trained checkpoints, and each frame is run with an operator-adjustable confidence threshold defaulting to 0.45. Every finalised classification is written to the database with its confidence, bounding box, timestamp and shelf-life value, and the indicator panel reads from that same database, so that the displayed statistics and the stored record cannot diverge.
+The model is loaded once per session, with a menu to pick between trained checkpoints, and every frame runs at a confidence threshold the operator can adjust (0.45 by default). Every finalised classification is saved to the database with its confidence, box, timestamp and shelf-life value, and the indicator panel reads from that same database, so what is shown on screen always matches what is stored.
 
 \begin{figure}[H]
 \centering
@@ -476,17 +407,11 @@ The model is loaded once and cached for the session, with a selector for choosin
 \subsection{Hardware and Software Integration}
 \label{sec:m_integration}
 
-\subsubsection{Command Transfer}
+The dashboard talks to the controller over Bluetooth. On classification, the host sends a short command: one of four gate commands, or a no-gate command for a defective fruit. Each command has a sequence number and is resent until acknowledged, up to a fixed number of tries. If the controller sees a command it has already acted on, it acknowledges it again but does not act on it twice. Both parts matter -- a lost command drops a fruit from the queue, and a lost acknowledgement duplicates it -- and either fault throws off every gate assignment that comes after it.
 
-The dashboard communicates with the controller over a Bluetooth \acrfull{SPP} link at 115{,}200 baud. On classification, the host transmits a plain-text command: one of four class commands corresponding to the four ripening gates, or a no-class command for fruit classified as defective.
+On the controller side, each gate keeps its own queue of pending classifications, in the order the fruit will reach them along the belt. When a gate's sensor detects an arriving fruit, the item at the front of that gate's queue is checked: if it matches the class the gate handles, the gate opens; if not, the item moves on to the next gate's queue to be checked again there. This keeps every classification lined up with the physical fruit it belongs to, even with several fruits on the belt at once.
 
-Each command carries a monotonically increasing sequence number, and the host retransmits it until a matching acknowledgement is received, up to four attempts with a 0.5~second timeout each. The controller records the sequence number it last acted upon; a command whose sequence number matches that record is acknowledged again but not acted on a second time. Both halves of this protocol are necessary, and for asymmetric reasons. A lost command would silently remove a fruit from the queue, and a lost acknowledgement would cause the same fruit to be entered twice; either fault misaligns every gate assignment that follows it, so the error is persistent rather than transient.
-
-\subsubsection{Gate Release}
-
-On the controller side the firmware maintains a cascaded queue with one stage per gate position, ordered as the fruit encounters them along the belt. Every classification enters the first stage. When the infrared sensor at a stage registers the arrival of a fruit, the entry at the head of that stage's queue is removed and compared with the class served by that gate. If the two match, the gate is released and the fruit is diverted. If they do not, the entry is passed forward into the next stage's queue, to be tested again at the next gate. Belt order is preserved from end to end, so a first-in, first-out queue at each stage is sufficient to keep entries aligned with the fruit they describe. Queue depth allows several fruits to be in transit simultaneously.
-
-Releasing each gate from its own presence sensor, rather than from an elapsed time computed over the full camera-to-gate distance as in Equation~\eqref{eq:timed}, is the central design decision of the integration. It removes the dominant and distance-accumulating source of timing error, which is what makes the last gate in a timed system the least reliable. A short residual offset remains between the sensor and the diverter blade itself, and the firmware compensates for it with a release delay that is scaled according to the commanded belt speed, together with a fixed manual trim; the gate then holds open for 2{,}000~ms before returning to rest.
+Each gate is released by its own sensor rather than by a time calculated from belt speed and distance (the simpler approach outlined in Section~\ref{sec:actuation}), which removes the main source of error that would otherwise grow worse for gates further down the belt. A small delay, scaled to belt speed, compensates for the short gap between the sensor and the diverter blade itself; the gate then stays open briefly before returning to rest.
 
 \begin{figure}[H]
 \centering
@@ -498,25 +423,16 @@ Releasing each gate from its own presence sensor, rather than from an elapsed ti
 \subsection{Shelf Life Observation Procedure}
 \label{sec:m_shelflife}
 
-Shelf-life estimation is derived from a time-series observation study rather than from a learned predictive model. Padma tomatoes of known initial ripening stage were held under room-temperature conditions and observed each morning over a continuous 31-day period. At each observation, colour differentiation was used to determine the fruit's position in the four-stage progression defined in Table~\ref{tab:ripeness}, and the number of days spent in each stage was recorded. A fruit was considered to have left the study once it became unsellable, defined as the onset of excessive softening, fungal or rotting development, or severe surface blemishing.
+Shelf life was measured directly rather than predicted by a model. A total of 100 Padma tomatoes of known starting stage were kept at ambient room temperature and observed over a continuous 31-day period. Each morning, between 7:00 and 7:20~a.m., every fruit was photographed from four angles, and colour differentiation was used to place it in one of the four stages from Table~\ref{tab:ripeness}; the number of days spent in each stage was recorded. A fruit left the study once it became unsellable -- noticeably soft, mouldy or rotting, or badly blemished.
 
-\TODO{number of fruits observed in total and at each starting stage; the calendar dates of the observation period; the daily observation time; and the temperature and relative humidity of the storage environment. The published comparison study recorded 29\,\textdegree C and 80\,\% relative humidity, so recording both permits a direct comparison in Chapter~4; without them the protocol is not reproducible}
+\TODO{number of fruits per starting stage; calendar dates of the observation period; and the measured temperature and relative humidity of the storage environment (rather than "room temperature"), so the study can be compared against the published Padma study, which recorded 29\textdegree C and 80\,\% relative humidity}
 
-From the recorded stage durations, the remaining shelf life associated with each detected class is computed by Equation~\eqref{eq:shelflife} as the sum of the durations of that stage and all subsequent stages.
-
-\begin{equation}
-    L(k) = \sum_{j=k}^{4} d_j
-    \label{eq:shelflife}
-\end{equation}
-
-where $k$ is the index of the detected stage, $d_j$ is the measured duration of stage $j$, and stages are indexed 1 to 4 from green to red. Fruit classified as defective is assigned $L = 0$ by definition rather than by measurement, since it is rejected at the point of sorting.
-
-Equation~\eqref{eq:shelflife} uses the full duration of the detected stage, because the point at which a fruit entered that stage is not observable from a single image. The value it returns is therefore an upper bound on remaining shelf life, and is reported as such. The resulting per-class values are implemented in the system as a static lookup applied at the moment of classification, and the complete observation record is given in Appendix~B.
+The remaining shelf life for a detected class is the time left in that stage plus the full length of every stage after it -- for example, a fruit detected as breaker is credited with the rest of its time as breaker plus the entire turning and red stages that follow. This is an upper bound, not an exact value, since a single image cannot show how long a fruit has already been in its current stage. A fruit classified as defective is assigned zero shelf life, since it is rejected at the point of sorting. These per-class values are stored as a fixed lookup table used at the moment of classification; the full observation record is in Appendix~B.
 
 \subsection{Complete End to End System Process}
 \label{sec:m_endtoend}
 
-The procedures described above combine into a single process, shown in Figure~\ref{fig:workflow}. Fruit is collected and pre-sorted, photographed under controlled illumination, annotated, preprocessed and augmented, and split into three subsets; the detector is then trained, validated and tested. In deployment, the live feed is passed frame by frame through the trained model, each fruit is tracked and classified by Equations~\eqref{eq:vote} and \eqref{eq:defect}, the finalised class is converted into a sorting command, the corresponding gate servo is released when the fruit reaches that gate's sensor, and the classification, confidence and estimated remaining shelf life are logged and displayed.
+The steps above combine into one process, shown in Figure~\ref{fig:workflow}. Fruit is collected and pre-sorted, photographed under controlled lighting, annotated, preprocessed and augmented, then split into three sets; the detector is trained and tested on these. In deployment, each live frame goes through the trained model, each fruit is tracked and classified as in Section~\ref{sec:m_realtime}, the result becomes a sorting command, the matching gate opens when the fruit reaches its sensor, and the classification, confidence and estimated shelf life are logged and shown on the dashboard.
 
 \begin{figure}[H]
 \centering
@@ -528,26 +444,24 @@ The procedures described above combine into a single process, shown in Figure~\r
 \subsection{Experimental Procedure}
 \label{sec:m_experiments}
 
-Five experiments were designed to evaluate the system.
+Five experiments were used to evaluate the system.
 
-\textbf{Experiment 1 --- Held-out test evaluation.} Quantifies detection and classification performance on unseen data, using the dataset of Section~\ref{sec:m_dataset} and the procedure of Sections~\ref{sec:m_training} and \ref{sec:m_evaluation}. The independent variable is the trained checkpoint; the dependent variables are precision, recall, mAP@50 and mAP@50--95, per class and overall; the controlled variables are the fixed test split and fixed evaluation settings. A single evaluation pass is performed by design, because repeated evaluation against the same split introduces selection bias.
+\textbf{Experiment 1 -- Held-out test evaluation.} Measures detection and classification performance on unseen data, using the dataset from Section~\ref{sec:m_dataset} and the procedure from Sections~\ref{sec:m_training} and~\ref{sec:m_evaluation}: precision, recall, mAP@50 and mAP@50--95, per class and overall, from a single pass over the fixed test set.
 
-\textbf{Experiment 2 --- Architecture comparison.} Compares the deployed YOLOv8m model against a YOLO26m model trained on the identical dataset and evaluated on the identical held-out split, in order to justify the deployed architecture on evidence from this dataset. The independent variable is the architecture; the dependent variables are as in Experiment~1, reported with the bootstrap intervals of Section~\ref{sec:m_evaluation}.
+\textbf{Experiment 2 -- Architecture comparison.} Compares the deployed YOLOv8m model against a YOLO26m model trained on the same data and tested on the same held-out set, so the choice of architecture is backed by this project's own evidence. The two training runs were not set up identically -- one used a fixed batch size and the other automatic batch selection, and they stopped after different numbers of epochs -- and this difference is reported alongside the result rather than hidden.
 
-Two differences between the runs are not controlled and are reported alongside the result rather than left implicit: the comparison model was trained with a fixed batch size of two, where the deployed model used automatic batch selection, and the two runs early-stopped after different numbers of epochs. The comparison therefore establishes which of two concretely trained models performs better on this task, not which architecture is superior under matched optimisation budgets. Stating this is preferable to presenting the difference as a clean architectural result.
+\textbf{Experiment 3 -- Live classification validation.} Checks classification outside the offline test set, by showing fruit of known class to the live camera in the lightbox and recording what the dashboard reports. This experiment is what first exposed the lighting problem in Section~\ref{sec:annotation_qc}, and it was repeated after that was fixed. The result recorded is the proportion of fruits classified correctly.
 
-\textbf{Experiment 3 --- Live classification validation.} Validates classification outside the offline test split, by presenting fruits of known class to the live camera inside the lightbox and recording the classification returned by the dashboard. This experiment was the one that exposed the confound described in Section~\ref{sec:annotation_qc}, and it was repeated after correction. The dependent variable is the proportion of presented fruits classified correctly.
+\textbf{Experiment 4 -- Conveyor transport and end-to-end sorting.} Runs the conveyor with fruit of known class on the belt, in two parts: a mechanical run with no camera or sorting logic active, checking that transport is smooth and stable; and a full run with the whole pipeline active, checking how often each fruit is diverted at the correct gate.
 
-\textbf{Experiment 4 --- Conveyor transport and end-to-end sorting.} Operates the conveyor under programmed stepper control with fruit of known class placed on the belt. It is conducted in two parts: a mechanical part with no vision or sorting logic active, in which the dependent variable is the stability and consistency of transport; and a closed-loop part with the full pipeline active, in which the dependent variable is the proportion of fruits diverted at the correct gate.
-
-\textbf{Experiment 5 --- Shelf-life observation.} The study of Section~\ref{sec:m_shelflife}. The dependent variable is the number of days each fruit spends in each ripening stage.
+\textbf{Experiment 5 -- Shelf-life observation.} The study described in Section~\ref{sec:m_shelflife}, recording how many days each fruit spends in each ripening stage.
 
 Raw records for all five experiments are given in Appendix~B.
 
 \subsection{System Testing Procedure}
 \label{sec:m_testing}
 
-System testing was planned in four phases: controlled-environment testing under lightbox illumination; stress testing with varied fruit orientation, occlusion, capture distance and illumination; validation under realistic operating conditions; and comparison of automated grading against manual grading. The test cases derived from this plan are listed in Table~\ref{tab:testcases} with the result expected of each; outcomes and pass or fail status are reported in Chapter~\ref{ch:results}.
+Testing was planned in four phases: controlled testing under lightbox lighting; stress testing with varied fruit orientation, occlusion, distance and lighting; testing under realistic operating conditions; and comparing automated grading against manual grading. The resulting test cases are listed in Table~\ref{tab:testcases}, with outcomes and pass/fail status reported in Chapter~\ref{ch:results}.
 
 \begin{table}[H]
 \caption{System test cases and expected results}
@@ -569,18 +483,11 @@ T-08 & Wireless command reliability under retry & Sequenced class commands over 
 \end{tabularx}
 \end{table}
 
-These cases span detection-accuracy testing (T-01, T-02), classification testing (T-03), functional and mechanical testing (T-04, T-06) and integration testing (T-05, T-07, T-08).
+These cases cover detection accuracy (T-01, T-02), classification (T-03), mechanical function (T-04, T-06), and integration (T-05, T-07, T-08).
 
 \subsection{Ethical and Safety Considerations}
 \label{sec:m_ethics}
 
-This research involved food produce and electromechanical prototype hardware. It did not involve human or animal subjects, the collection of personal data, or any procedure requiring institutional ethics board review, so the relevant considerations were engineering safety and food-handling practice.
-
-\begin{itemize}
-    \item \textbf{Electrical safety.} The prototype operates a 24\,V driver supply, a 12\,V logic supply and the servo supply; wiring and connections were inspected before each powered test.
-    \item \textbf{Mechanical safety.} The belt, rollers, motor and gate servos present pinch-point hazards, and the belt area was kept clear of hands during all powered tests.
-    \item \textbf{Food handling.} Fruit used for photography and conveyor testing was handled and disposed of hygienically. No chemical treatment or destructive testing was performed beyond the shelf-life observation study of Section~\ref{sec:m_shelflife}, in which fruit degrades to spoilage by design.
-    \item \textbf{Data and intellectual property.} Images originally obtained from a public dataset were used under that dataset's terms and were subsequently removed, as described in Section~\ref{sec:annotation_qc}. The project's own annotated dataset is released under a Creative Commons Attribution 4.0 licence.
-\end{itemize}
+This research involved food produce and a prototype conveyor, not human or animal subjects or personal data, so no ethics board review was required. Wiring was checked before every powered test given the 24\,V and 12\,V supplies in use; the belt, rollers, motor and gate servos are pinch-point hazards, so the belt area was kept clear of hands during powered tests; fruit used for photography and conveyor testing was handled and disposed of hygienically, with no destructive testing other than the shelf-life study, where fruit is allowed to spoil by design; and images originally taken from a public dataset were used under that dataset's terms and were later removed, as described in Section~\ref{sec:annotation_qc}.
 
 \clearpage
