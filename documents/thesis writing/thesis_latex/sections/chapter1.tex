@@ -34,9 +34,15 @@ At the system level, most work reports a model evaluated offline on static image
 \subsubsection{Relevance and Significance of the Study}
 \label{sec:significance}
 
-The economic argument rests on the loss that objective grading avoids. Replacing repeated manual inspection with a single automated pass reduces handling damage and removes the operator-to-operator variation that lets overripe fruit into packed batches \citep{abekoon2024}.
+There is a clear economic case for this work. Manual grading requires repeated human inspection, which is slow, costly, and inconsistent — different inspectors judge ripeness differently, and this inconsistency lets overripe fruit slip into packed batches \citep{abekoon2024}. Replacing repeated manual checks with a single automated pass reduces both handling damage and this inspector-to-inspector inconsistency.
 
-The scientific contribution is threefold. First, the study produces an annotated Padma-specific detection dataset covering four ripening stages and a defect class, which does not currently exist. Second, it treats detection not as an offline metric but as one component of a working sensor-triggered sorting machine, and reports the integration honestly, including a documented case in which a detector learned the imaging conditions of a class rather than the class itself and had to be corrected. Reporting that failure and its correction is itself a contribution, because it is a failure mode that offline metrics conceal. Third, it links each grading decision to a remaining shelf-life value measured for this cultivar, and surfaces both on an operator dashboard, so that the output of the line is logistical information rather than only a physical sort.
+This study makes three scientific contributions.
+
+First, it produces a new dataset: annotated images of the Padma tomato cultivar, labelled across four ripening stages plus a defect class. No such dataset currently exists.
+
+Second, it does not treat detection accuracy as just an offline number. Instead, it builds and tests a real, working sorting machine that uses the detector's output to physically sort fruit, triggered by sensors. The study also reports a real problem honestly: at one point, the detector learned to recognise a class by its photo background and lighting conditions, not by the tomato's actual features, and this had to be diagnosed and fixed. Reporting this failure, and how it was corrected, is itself a useful contribution, since this type of mistake is invisible in ordinary offline test scores and only shows up when the system is tested in real, live conditions.
+
+Third, the study links each grading decision to a remaining shelf-life estimate for this specific cultivar, and shows both the grade and the shelf-life estimate together on an operator dashboard. This means the system's output is not just a physical sort into bins — it also gives the operator useful logistical information, namely how long each batch can still be stored or sold.
 
 \subsection{Research Objectives}
 \label{sec:objectives}
