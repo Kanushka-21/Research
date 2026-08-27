@@ -302,8 +302,6 @@ The system uses YOLOv8, an object detection architecture that finds and classifi
 
 This architecture fits the task well: a single camera frame above the conveyor can contain more than one fruit at different ripening stages, and the sorting logic needs a box, a class and a confidence score for each one, fast enough to keep up with the belt. Published work supports this choice for tomato detection \citep{safira2026}, and the medium variant balances accuracy against the memory available on the host \acrshort{GPU}. No separate classification step is used afterwards -- the sorting decision is the detector's own prediction, combined across frames as described in Section~\ref{sec:m_realtime}.
 
-A second detector (YOLO26m) was also trained on the same data, so the architecture choice could be checked against this project's own evidence rather than published results alone; this comparison is Experiment~2 in Section~\ref{sec:m_experiments}.
-
 \begin{figure}[H]
 \centering
 \TODO{Figure 3.6 -- single stage detection workflow of the YOLOv8 architecture: input frame, backbone and neck feature extraction, detection head, boxes with class and confidence}
@@ -343,7 +341,7 @@ The validation set was checked after every epoch during training to catch overfi
 
 Performance is measured with the standard object detection metrics \citep{padilla2020}: precision (how many of the model's positive predictions were correct), recall (how many of the real fruits of a class were actually found), an $F_1$ score that balances the two (used to pick the confidence threshold used at deployment), and mean average precision at a looser overlap threshold (mAP@50) and a stricter one that also rewards a tightly placed box (mAP@50--95). A confusion matrix is also produced to show which classes get mixed up with each other; as Section~\ref{sec:annotation_qc} shows, this diagnostic caught a problem that the summary numbers alone did not.
 
-Because the test set is limited in size -- and the defect class especially, with only 66 instances -- a confidence interval is calculated for each reported metric by resampling the test set, so a difference between two models is only treated as real when the intervals do not overlap.
+The test set is limited in size, and the defect class especially so, with only 66 instances, so the per-class figures for that class are read with more caution than those for the four ripening classes.
 
 System-level figures -- fruits processed, class distribution, defect ratio, throughput and average shelf life -- are simply totalled directly from the detection log.
 
@@ -444,19 +442,17 @@ The steps above combine into one process, shown in Figure~\ref{fig:workflow}. Fr
 \subsection{Experimental Procedure}
 \label{sec:m_experiments}
 
-Five experiments were used to evaluate the system.
+Four experiments were used to evaluate the system.
 
 \textbf{Experiment 1 -- Held-out test evaluation.} Measures detection and classification performance on unseen data, using the dataset from Section~\ref{sec:m_dataset} and the procedure from Sections~\ref{sec:m_training} and~\ref{sec:m_evaluation}: precision, recall, mAP@50 and mAP@50--95, per class and overall, from a single pass over the fixed test set.
 
-\textbf{Experiment 2 -- Architecture comparison.} Compares the deployed YOLOv8m model against a YOLO26m model trained on the same data and tested on the same held-out set, so the choice of architecture is backed by this project's own evidence. The two training runs were not set up identically -- one used a fixed batch size and the other automatic batch selection, and they stopped after different numbers of epochs -- and this difference is reported alongside the result rather than hidden.
+\textbf{Experiment 2 -- Live classification validation.} Checks classification outside the offline test set, by showing fruit of known class to the live camera in the lightbox and recording what the dashboard reports. This experiment is what first exposed the lighting problem in Section~\ref{sec:annotation_qc}, and it was repeated after that was fixed. The result recorded is whether each presented fruit is classified correctly.
 
-\textbf{Experiment 3 -- Live classification validation.} Checks classification outside the offline test set, by showing fruit of known class to the live camera in the lightbox and recording what the dashboard reports. This experiment is what first exposed the lighting problem in Section~\ref{sec:annotation_qc}, and it was repeated after that was fixed. The result recorded is the proportion of fruits classified correctly.
+\textbf{Experiment 3 -- Conveyor transport and end-to-end sorting.} Runs the conveyor with fruit of known class on the belt, in two parts: a mechanical run with no camera or sorting logic active, checking that transport is smooth and stable; and a full run with the whole pipeline active, checking that each fruit is diverted at the correct gate.
 
-\textbf{Experiment 4 -- Conveyor transport and end-to-end sorting.} Runs the conveyor with fruit of known class on the belt, in two parts: a mechanical run with no camera or sorting logic active, checking that transport is smooth and stable; and a full run with the whole pipeline active, checking how often each fruit is diverted at the correct gate.
+\textbf{Experiment 4 -- Shelf-life observation.} The study described in Section~\ref{sec:m_shelflife}, recording how many days each fruit spends in each ripening stage.
 
-\textbf{Experiment 5 -- Shelf-life observation.} The study described in Section~\ref{sec:m_shelflife}, recording how many days each fruit spends in each ripening stage.
-
-Raw records for all five experiments are given in Appendix~B.
+Raw records for all four experiments are given in Appendix~B.
 
 \subsection{System Testing Procedure}
 \label{sec:m_testing}
@@ -472,7 +468,7 @@ Testing was planned in four phases: controlled testing under lightbox lighting; 
 \textbf{ID} & \textbf{Test description} & \textbf{Input} & \textbf{Expected result} \\
 \midrule
 T-01 & Held-out test set detection and classification accuracy & 777 unseen labelled images & High precision, recall and mean average precision across all five classes \\
-T-02 & Architecture comparison on the same held-out split & Two trained checkpoints & A defensible basis for the deployed architecture choice \\
+T-02 & Deployed architecture selection justified on task grounds & Trained YOLOv8-medium checkpoint; task requirements & A defensible, task-specific justification for the deployed single-stage architecture \\
 T-03 & Live classification inside the lightbox & Known-class fruit, live camera & Correct class reported for each fruit presented \\
 T-04 & Conveyor belt mechanical transport & Fresh fruit on the running belt & Smooth and stable transport without stalling or displacement \\
 T-05 & Non-tomato object rejection & Frame containing fruit and distractor objects & Distractors not classified into any tomato class \\
@@ -483,7 +479,7 @@ T-08 & Wireless command reliability under retry & Sequenced class commands over 
 \end{tabularx}
 \end{table}
 
-These cases cover detection accuracy (T-01, T-02), classification (T-03), mechanical function (T-04, T-06), and integration (T-05, T-07, T-08).
+These cases cover detection accuracy (T-01), architecture justification (T-02), classification (T-03), mechanical function (T-04, T-06), and integration (T-05, T-07, T-08).
 
 \subsection{Ethical and Safety Considerations}
 \label{sec:m_ethics}

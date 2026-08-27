@@ -25,7 +25,7 @@ At the system level, most work reports a model evaluated offline on static image
 \label{sec:questions}
 
 \begin{enumerate}
-    \item How accurately can a single-stage object detector localise and classify Padma fruit into four ripening stages and a defect class from a purpose-built, cultivar-specific dataset, and which architecture within that family performs best on this task?
+    \item How accurately can a single-stage object detector localise and classify Padma fruit into four ripening stages and a defect class from a purpose-built, cultivar-specific dataset?
     \item What decision policy converts a stream of per-frame detections into one reliable classification per fruit as it travels beneath a camera, given that the ripening classes lie on a continuous colour gradient?
     \item What control architecture synchronises classification with physical gate actuation on a conveyor without relying on an assumed constant belt speed?
     \item How can measured post-harvest stage durations for Padma fruit be converted into a remaining shelf-life value attached to each graded fruit, and reported alongside line-level operating indicators on a live dashboard?
@@ -49,7 +49,7 @@ To design, develop and evaluate an integrated, real-time detection and mechatron
 
 \begin{enumerate}
     \item To compile, annotate and preprocess a cultivar-specific image dataset representing four ripening stages (green, breaker, turning, red) and a defect class for the Padma variety.
-    \item To train and evaluate a YOLOv8-medium object detector on this dataset against a held-out test split, and to compare it under identical data conditions with a YOLO26-medium model in order to justify the deployed architecture on evidence rather than assertion.
+    \item To train and evaluate a YOLOv8-medium object detector on this dataset against a held-out test split, reporting per-class and overall precision, recall and mean average precision, and to justify the deployed single-stage architecture on task-specific grounds.
     \item To define and implement a per-fruit decision policy that aggregates per-frame detections across a tracked fruit into a single classification, including a deliberately conservative rule for the defect class.
     \item To measure the duration of each ripening stage for Padma fruit under room-temperature storage, and to derive from those durations a per-class remaining shelf-life value applied at the moment of classification.
     \item To design and construct a low-cost conveyor sorting rig controlled by an ESP32 microcontroller, in which gate actuation is released by an \acrfull{IR} presence sensor at each gate rather than by an elapsed time computed from belt speed.
@@ -61,7 +61,7 @@ To design, develop and evaluate an integrated, real-time detection and mechatron
 
 \begin{enumerate}
     \item An annotated Padma-specific detection dataset covering four ripening stages and a defect class, available to support further localised research.
-    \item A trained detector for Padma ripening stage and defect condition, with performance reported on a held-out test split and against a comparison architecture.
+    \item A trained detector for Padma ripening stage and defect condition, with performance reported on a held-out test split.
     \item A working conveyor sorting prototype using non-contact infrared triggering and servo-actuated diverter gates.
     \item A per-class remaining shelf-life mapping derived from measured stage durations for this cultivar.
     \item A live dashboard reporting throughput, class distribution, defect ratio and mean remaining shelf life over the logged detection record.

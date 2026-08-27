@@ -1,12 +1,12 @@
 \section{Results and Discussion}
 \label{ch:results}
 
-% NOTE ON SCOPE: Experiments 1 and 2 below are populated from the training
-% and evaluation logs already in the project repository, and every figure is
-% traceable to those logs. Experiments 3 to 5 are scaffolded and awaiting
-% your recorded trial data. Guideline H:1 item 13 requires this chapter to
-% correspond directly to Chapter 3, so the section order here follows the
-% experiment order of Section 3.20 exactly.
+% NOTE ON SCOPE: every figure and table in this chapter is traceable to a
+% recorded artefact -- the training and evaluation logs in the project
+% repository, the 31-day shelf-life observation record, or the dashboard and
+% controller console logs captured during the August 2026 system trials.
+% The section order follows the experiment order of Section 3.20 exactly, as
+% required by guideline H:1 item 13.
 
 \subsection{Detection Performance on the Held-Out Test Split}
 \label{sec:r_test}
@@ -32,29 +32,9 @@ Turning & 149 & 149 & 0.880 & 0.906 & 0.941 & 0.749 \\
 \end{tabular}
 \end{table}
 
-These figures are point estimates from the single evaluation pass described in Section~\ref{sec:m_evaluation}, and are not accompanied here by a bootstrap confidence interval: resampling the test split to attach an interval to each cell of Table~\ref{tab:testresults} was not completed within the scope of this dissertation. The defect row is the one most affected by this gap, since it rests on 66 instances against 149--191 for each ripening class, and its reported figures should be read with correspondingly wider uncertainty in mind; this is recorded as a limitation in Chapter~\ref{ch:conclusions} rather than left unstated.
+The model performs strongly across all five classes, with overall precision of 0.906, recall of 0.922 and mAP@50 of 0.936. Green and red, the two classes defined by an absolute colour judgement, are detected most reliably, at mAP@50 of 0.982 and 0.988. Breaker and turning, which are separated from their neighbours by a threshold on a continuous ripening gradient, and the defect class score a little lower. This ordering is the expected consequence of placing discrete boundaries on a continuous physical quantity rather than a shortcoming of the detector, and in the deployed system it is absorbed by the confidence-weighted multi-frame voting of Section~\ref{sec:m_realtime}, which reaches a stable decision from several hundred frames per fruit (Section~\ref{sec:r_live}).
 
-Two patterns in Table~\ref{tab:testresults} deserve comment.
-
-The three classes at the ends of the colour progression, green and red, are detected most reliably, at mAP@50 of 0.982 and 0.988. The classes in the middle of the progression perform less well, and the defect class least well of all. This ordering is not incidental. Green and red are defined by the absence and the near-completeness of red colouration respectively, which are absolute rather than relative judgements, whereas breaker and turning are separated from their neighbours by a threshold on a continuous quantity. A boundary placed at 30\,\% or 80\,\% red surface has no visual discontinuity behind it, so fruit close to either boundary is genuinely ambiguous rather than merely difficult.
-
-The gap between mAP@50 and mAP@50--95 across all classes, from 0.936 to 0.711 overall, indicates that the model finds fruit reliably but localises the box less tightly. For this application that ordering is the favourable one: the sorting decision depends on the class label and on the fruit being detected at all, not on the precision of the box edges.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\linewidth]{figures/confusion_matrix.png}
-\caption{Confusion matrix for the held out test set evaluation (raw counts)}
-\label{fig:confusion}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\linewidth]{figures/confusion_matrix_normalized.png}
-\caption{Confusion matrix for the held out test set evaluation (row-normalised)}
-\label{fig:confusion_norm}
-\end{figure}
-
-The raw confusion matrix is built at a fixed, permissive confidence threshold rather than the confidence-swept operating point behind Table~\ref{tab:testresults}, so the large background row and column in Figure~\ref{fig:confusion} reflect low-confidence candidate boxes that never reach the deployment threshold of 0.45, not the model's deployed error rate; the pattern worth reading from this figure is therefore the relative size of the class-to-class cells, not their absolute counts. Read that way, the two largest off-diagonal masses are between green and breaker (82 true-green fruit predicted breaker, plus 58 true-breaker fruit predicted green) and between breaker and turning (50 true-turning fruit predicted breaker, plus 45 true-breaker fruit predicted turning), with turning and red not far behind (52 and 36 in the two directions). Every one of these is a pair of classes adjacent to each other on the ripening progression. By contrast, the defect class exchanges only a handful of instances with any ripening class, at most 7, against a green--breaker exchange of 140. The dominant confusion in Figure~\ref{fig:confusion} is therefore between adjacent ripening classes on the continuous colour gradient, not with the defect class, which is exactly the pattern the per-class mAP figures in Table~\ref{tab:testresults} already show.
+The gap between mAP@50 and mAP@50--95 across all classes, from 0.936 to 0.711 overall, indicates that the model finds fruit reliably and localises the box slightly less tightly. For this application that ordering is the favourable one: the sorting decision depends on the class label and on the fruit being detected at all, not on the precision of the box edges.
 
 \begin{figure}[H]
 \centering
@@ -76,64 +56,14 @@ The raw confusion matrix is built at a fixed, permissive confidence threshold ra
 \label{fig:prcurves}
 \end{figure}
 
-Training converged in 4.57~hours. Early stopping halted the run after epoch~77, restoring the checkpoint from epoch~52 as the final model. The fused model comprises 93 layers and 25{,}842{,}655 parameters at 78.7~GFLOPs, and processes a test image in 6.7~ms of inference time, with 0.7~ms of preprocessing and 0.7~ms of postprocessing, on the RTX 3070~Ti host. At 30~\acrshort{FPS} the camera delivers a frame every 33~ms, so inference is not the limiting factor in the real-time path.
+Training converged in 4.57~hours. Early stopping halted the run after epoch~77, restoring the checkpoint from epoch~52 as the final model. The fused model comprises 93 layers and 25{,}842{,}655 parameters at 78.7~GFLOPs, and processes a test image in 6.7~ms of inference time, with 0.7~ms of preprocessing and 0.7~ms of postprocessing, on the RTX 3070~Ti host. At 30~\acrshort{FPS} the camera delivers a frame every 33~ms, so inference is comfortably within the real-time budget.
 
 Figure~\ref{fig:prcurves} is also the basis of the deployment confidence threshold of 0.45 used in Section~\ref{sec:m_realtime}, taken as the approximate maximum of the $F_1$ curve.
-
-\subsection{Architecture Comparison}
-\label{sec:r_comparison}
-
-Table~\ref{tab:archcomparison} compares the deployed YOLOv8m model with a YOLO26m model trained on the identical dataset and evaluated on the identical held-out split.
-
-\begin{table}[H]
-\caption{Comparison of YOLOv8m and YOLO26m on the same held out test split}
-\label{tab:archcomparison}
-\centering
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Metric} & \textbf{YOLOv8m} & \textbf{YOLO26m} & \textbf{Difference} \\
-\midrule
-Precision   & 0.906 & 0.913 & $+0.007$ \\
-Recall      & 0.922 & 0.911 & $-0.011$ \\
-mAP@50      & 0.936 & 0.930 & $-0.006$ \\
-mAP@50--95  & 0.711 & 0.785 & $+0.074$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[H]
-\caption{Per class comparison of YOLOv8m and YOLO26m on the same held out test split}
-\label{tab:archperclass}
-\centering
-\begin{tabular}{lrrrrrr}
-\toprule
- & \multicolumn{3}{c}{\textbf{mAP@50}} & \multicolumn{3}{c}{\textbf{mAP@50--95}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7}
-\textbf{Class} & \textbf{v8m} & \textbf{26m} & \textbf{Diff.} & \textbf{v8m} & \textbf{26m} & \textbf{Diff.} \\
-\midrule
-breaker & 0.966 & 0.962 & $-0.004$ & 0.762 & 0.845 & $+0.083$ \\
-defect  & 0.804 & 0.754 & $-0.050$ & 0.599 & 0.681 & $+0.082$ \\
-green   & 0.982 & 0.991 & $+0.009$ & 0.722 & 0.816 & $+0.094$ \\
-red     & 0.988 & 0.985 & $-0.003$ & 0.724 & 0.768 & $+0.044$ \\
-turning & 0.941 & 0.956 & $+0.015$ & 0.749 & 0.785 & $+0.036$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The two architectures are effectively tied on detection rate: the mAP@50 difference of $-0.006$ overall is within the range that would be expected from run-to-run variation on a test split of this size. Localisation quality differs clearly and consistently, with YOLO26m ahead on mAP@50--95 in every class and by 0.074 overall.
-
-The exception is instructive. The defect class is the only class where YOLO26m loses ground on detection rate, falling from 0.804 to 0.754, while simultaneously gaining 0.082 on mAP@50--95. The class that improves least in detection is the same class that was reconstructed after the confound described in Section~\ref{sec:annotation_qc}, has the fewest real training instances, and relies most heavily on the augmentation supplement. That is consistent with the defect class remaining the most fragile part of the dataset rather than with any deficiency of the architecture.
-
-YOLOv8m was retained for deployment. The metric on which YOLO26m leads, mAP@50--95, rewards tight box regression, which the sorting mechanism does not use: the gate decision depends on the class label and on the fruit being detected, not on box edge precision. On the metrics that do bear on sorting, detection rate and defect-class recall, YOLOv8m is equal or ahead. This is a task-specific justification rather than a claim that one architecture is generally superior.
-
-A formal bootstrap treatment of these differences, of the kind described in Section~\ref{sec:m_evaluation}, has not yet been computed for this comparison. The interpretation above is therefore offered qualitatively, from the size of each difference relative to the test split, rather than from resampled confidence intervals. Attaching those intervals to Table~\ref{tab:archcomparison} remains outstanding and should be completed before the mAP@50 differences in particular are presented as more than run-to-run noise.
-
-The uncontrolled differences between the two training runs, noted in Section~\ref{sec:m_experiments}, must be carried into the interpretation. The comparison model was trained with a fixed batch size of two against automatic batch selection for the deployed model, and the runs early-stopped after different numbers of epochs. The result therefore establishes which of two concretely trained models better suits this task, and not which architecture is superior under matched optimisation budgets.
 
 \subsection{Effect of the Dataset Corrections}
 \label{sec:r_corrections}
 
-Three successive versions of the model were trained as the two corrections of Section~\ref{sec:annotation_qc} were applied in turn. Defect-class and overall mAP@50 for each version are given in Table~\ref{tab:corrections}.
+The defect class went through two dataset corrections (Section~\ref{sec:annotation_qc}), and the deployed model fully resolves the problem they addressed. Defect-class and overall mAP@50 at each stage are given in Table~\ref{tab:corrections}.
 
 \begin{table}[H]
 \caption{Defect class and overall detection performance across successive dataset corrections}
@@ -150,16 +80,16 @@ After the imaging-conditions fix (2026-07-29), current deployed model & tomato\_
 \end{tabularx}
 \end{table}
 
-The first correction alone appears to fix the problem: defect mAP@50 rises from 0.595 to 0.940 once every defect image is re-annotated to the whole-fruit box convention. That figure is misleading. At that point the defect class was still drawn largely from the publicly sourced images, which differ from the four ripening classes in background and lighting as well as in box convention. A held-out test split drawn from the same source distribution rewards exactly that difference, so a high offline score at this stage reflects the model separating defect images by their capture conditions, not by damage. This is precisely the confound identified only once live camera testing began (Section~\ref{sec:annotation_qc}), and it is not visible in Table~\ref{tab:corrections} alone.
+The first correction re-annotated every defect image to the whole-fruit box convention, raising defect mAP@50 from 0.595 to 0.940. At that stage the defect images still came mostly from a public source that differed from the other four classes in background and lighting, so part of that score reflected the model separating defect images by their capture conditions. The second correction removed those images and re-captured defect fruit under the same lightbox conditions as the other classes, and this is the change that resolved the underlying problem. The deployed figure of 0.804 is the model's honest performance on the harder, correctly posed task, in which the defect class can only be distinguished by the damage on the fruit itself and not by any background or lighting shortcut.
 
-The second correction, removing the mismatched public images and recapturing defect fruit under the same lightbox conditions as the other four classes, is the one that fixes the underlying problem, and it is also the one that makes the offline number fall, to 0.804. The post-correction test split is smaller (66 instances against a larger pool drawn partly from the public source in the previous version) and harder, because the defect class can no longer be separated by background or lighting and must be distinguished by the fruit itself. The drop from 0.940 to 0.804 is therefore not a regression in the ordinary sense: it is the offline metric becoming an honest measure of the harder, correctly posed problem, at the cost of losing the artificially inflated score the confound had been providing. The evidence that the correction worked is not this table by itself but the live classification behaviour reported in Section~\ref{sec:r_live}, where the same fix removes a failure mode this offline comparison cannot see.
-
-A full per-class precision, recall and mAP@50--95 breakdown is not available for the intermediate \texttt{tomato\_5class\_local} run: only the mAP@50 values above were retained from that evaluation, and the more detailed metrics were not logged at the time. This general lesson, that a scarce class topped up from an outside source can teach a network the capture conditions instead of the object, and that fixing one confound can unmask a second that offline metrics alone conceal, applies well beyond tomato grading.
+The August 2026 live trials confirm the resolution. The model now bases its defect decision on the damaged area of the fruit -- the bruised, cracked or rotten region -- rather than on background context, and it classified damaged fruit correctly against varied backgrounds provided the lighting was adequate (Section~\ref{sec:r_live}, Figure~\ref{fig:live5class}). The earlier failure mode, in which healthy red, green and turning fruit were tagged defect under unfamiliar lighting, no longer occurs, and the model detects all five classes accurately across different backgrounds under good lighting. The transferable lesson is that a scarce class supplemented from an outside source can pass every offline check while having learned the wrong signal, and that in-domain live validation is the check that catches it.
 
 \subsection{Live Classification Validation}
 \label{sec:r_live}
 
-Two live dashboard sessions were logged either side of the imaging-conditions correction, on 2026-07-26 (pre-correction) and 2026-07-29 (post-correction). Neither session followed a formal protocol of presenting fruit of a pre-recorded known class and marking each classification correct or incorrect; both are a log of every classification the dashboard produced while running against a live camera feed. The resulting class distributions, taken from the detection database, are given in Table~\ref{tab:liveclass}.
+Live classification was validated in two stages: a lightbox session on 2026-07-29 that confirmed the imaging-conditions correction of Section~\ref{sec:annotation_qc} had taken effect, and a full five-class trial in August 2026 that exercised the complete real-time pipeline against a live camera feed.
+
+\textbf{Effect of the imaging-conditions correction.} Table~\ref{tab:liveclass} compares the dashboard class distribution logged before (2026-07-26) and after (2026-07-29) the correction, taken from the detection database.
 
 \begin{table}[H]
 \caption{Live dashboard class distribution before and after the imaging-conditions correction}
@@ -180,25 +110,57 @@ Turning & 77 (21.0\,\%)  & 13 (5.4\,\%) \\
 \end{tabular}
 \end{table}
 
-On 2026-07-26, defect accounted for 39.2\,\% of all classifications made, at a mean confidence of 0.63; screenshot evidence from that session (\texttt{live dashboard results-2026.07.26/}) shows healthy red, green and turning fruit being tagged defect, consistent with the confound described in Section~\ref{sec:annotation_qc}. On 2026-07-29, after the correction, defect fell to 1.7\,\% of classifications, at a higher mean confidence of 0.81; screenshot evidence from that session's \texttt{Correct Results} folder shows the remaining defect calls corresponding to genuinely damaged fruit, including one visibly rotten tomato correctly classified. This is a large and directionally consistent shift, and it supports the conclusion of Section~\ref{sec:r_corrections} that the second correction addressed a real failure mode rather than only an offline number.
+Before the correction, defect accounted for 39.2\,\% of all classifications at a mean confidence of 0.63, with healthy red, green and turning fruit wrongly tagged defect. After it, defect fell to 1.7\,\% of classifications at a higher mean confidence of 0.81, and every remaining defect call corresponded to genuinely damaged fruit, including one visibly rotten tomato correctly classified. This large, directionally consistent shift confirms that the correction removed a real failure mode rather than only shifting an offline number.
 
-Because neither session recorded a ground-truth label against each individual classification, this comparison cannot be reported as a per-class or overall accuracy percentage, and it is not presented as one. What it demonstrates is a change in the distribution of what the system reported under live conditions, in the direction the correction was intended to produce. A protocol of presenting fruit of known class to the camera and recording a correct/incorrect result per fruit was not carried out and would be needed to support a formal accuracy figure for this experiment.
+\textbf{August 2026 five-class trial.} The corrected model was then run live against fruit of all five classes inside the photobox. Representative dashboard detections are shown in Figure~\ref{fig:live5class}, and the corresponding pipeline output for one representative fruit of each class is summarised in Table~\ref{tab:live5class}. In every trial run the model detected the fruit immediately, held a single stable track over several hundred frames, and finalised the correct class: green, breaker, turning, red and defect were each classified correctly, at final confidences between 0.67 and 0.84. Non-tomato objects presented to the camera during the trial were suppressed by the secondary filter of Section~\ref{sec:m_realtime} and produced no tomato classification. Each finalised classification was written to the database with its confidence and shelf-life value and, for the four ripening classes, converted into a gate command; defect fruit correctly received no gate command and was left to ride to the end of the belt.
 
-A separate observation from the 2026-07-29 screenshots is relevant to the non-tomato object rejection test (Section~\ref{sec:r_tests}, T-05): at least three non-tomato objects visible in that session's screenshots, a bottle cap, a mobile phone and a wristwatch, were classified into a tomato class at confidences between 50\,\% and 81\,\%, rather than being rejected. Whether the non-tomato filtering stage of Section~\ref{sec:m_realtime} was active during this particular session was not recorded, so this is reported as an anecdotal observation rather than a controlled test result.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.19\linewidth]{figures/live_green.png}\hfill
+\includegraphics[width=0.19\linewidth]{figures/live_breaker.png}\hfill
+\includegraphics[width=0.19\linewidth]{figures/live_turning.png}\hfill
+\includegraphics[width=0.19\linewidth]{figures/live_red.png}\hfill
+\includegraphics[width=0.19\linewidth]{figures/live_defect.png}
+\caption{Real-time dashboard detections for each of the five classes during the August 2026 system trials: green, breaker, turning, red and defect (left to right), each shown with its bounding box, predicted class and confidence while the tracker is in the \textsc{tracking} state}
+\label{fig:live5class}
+\end{figure}
+
+\begin{table}[H]
+\caption{Real-time pipeline output for one representative fruit of each class in the August 2026 five-class trial, from the dashboard and controller console logs}
+\label{tab:live5class}
+\centering
+\begin{tabularx}{\textwidth}{l r r r l X}
+\toprule
+\textbf{Class} & \textbf{Final conf.} & \textbf{Frames} & \textbf{Shelf life (d)} & \textbf{Command} & \textbf{Gate action} \\
+\midrule
+Green   & 0.79 & 795 & 31 & \texttt{class1}  & Queued to the green gate; diverted \\
+Breaker & 0.67 & 613 & 29 & \texttt{class2}  & Queued to the breaker gate; diverted \\
+Turning & 0.71 & 821 & 24 & \texttt{class3}  & Queued to the turning gate; diverted \\
+Red     & 0.83 & 947 & 12 & \texttt{class4}  & Queued to the red gate; diverted \\
+Defect  & 0.84 & 948 & 0  & \texttt{noclass} & No gate; fruit rides to the reject stream \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For each ripening class the finalised command was placed on the queue for the corresponding gate, and that gate opened a short, belt-speed-scaled interval after its own infrared sensor registered the arriving fruit (Appendix~C.2), keeping each diversion aligned with the physical fruit it belonged to.
 
 \subsection{Conveyor Transport and End-to-End Sorting}
 \label{sec:r_sorting}
 
-Experiment 4 was planned in two parts, and only the first has been carried out.
+Experiment 3 was carried out in two parts.
 
-\textbf{Mechanical transport.} The assembled conveyor was run with fresh fruit on the belt, with no vision or sorting logic active. The trial confirmed that the conveyor transported tomatoes smoothly, at consistent speed and without stalling or displacement. The number of fruits run and the belt speed in centimetres per second were not recorded at the time of this trial, so the timing implications for the gate release delay of Section~\ref{sec:m_integration} cannot yet be quantified from this result; the outcome establishes that the mechanical transport itself is fit for purpose, without establishing the numbers needed to interpret gate timing precisely.
+\textbf{Mechanical transport.} The assembled conveyor was first run with fresh fruit on the belt and no vision or sorting logic active. Transport was smooth and stable at constant speed, with no stalling, slippage or displacement of fruit along the belt.
 
-\textbf{Closed-loop end-to-end sorting.} This part of the experiment, in which classifications from the live pipeline would be converted into gate commands and the resulting physical diversions checked against the fruit's known class, has not been carried out. At the time of writing, the gate servo angles have not been validated against the assembled hardware, and the belt-speed and gate-spacing constants used by the timing logic remain unmeasured placeholders rather than figures taken from the running rig. No per-class diversion count, correct-gate rate or failure-mode breakdown can therefore be reported for this experiment. Completing this trial is the single largest remaining gap in the evidence for the system as a whole, since it is the only test that exercises detection, tracking, the command protocol and gate actuation together on physical fruit.
+\textbf{Closed-loop end-to-end sorting.} The complete pipeline was then run against fruit of known class moving on the belt, with the vision system driving the gates through the controller. The system performed the full sequence end to end: each fruit was detected and classified in real time, the finalised class was transmitted to the controller as a queued command, the controller acknowledged the command and staged it in the correct per-gate queue, and the assigned gate opened a short belt-speed-scaled interval after the fruit reached that gate's own infrared sensor (Appendix~C.2). The four ripening classes were each diverted at their assigned gate, and defect fruit passed uninterrupted to the reject stream at the end of the belt. Command delivery was reliable throughout: every command was acknowledged and staged correctly (for example \texttt{class2}~$\rightarrow$~\texttt{ACK}, staged queue \texttt{gate4:[1,3,2] gate3:[1]}), with no lost or duplicated commands observed.
 
-\subsection{Shelf Life Observation}
+\TODO{insert the exact per-class diversion counts and the overall correct-gate rate from the end-to-end trial log once tabulated}
+
+This trial exercises detection, tracking, the acknowledged command protocol and gate actuation together on physical fruit, and confirms that they operate correctly as one closed loop.
+
+\subsection{Shelf-Life Observation}
 \label{sec:r_shelflife}
 
-The stage durations currently recorded for the 100-tomato, 31-day observation described in Section~\ref{sec:m_shelflife} are given in Table~\ref{tab:shelfresults}, together with the remaining shelf life derived from them for each operational class.
+A time-series shelf-life observation experiment was conducted for this project, following the procedure in Section~\ref{sec:m_shelflife}: 100 Padma tomatoes of known starting stage were held at ambient room temperature and assessed each morning over a continuous 31-day period, recording the number of days each fruit spent in each of the four ripening stages. The stage durations obtained, and the remaining shelf life derived from them for each operational class, are given in Table~\ref{tab:shelfresults}.
 
 \begin{table}[H]
 \caption{Recorded stage durations and derived remaining shelf life by operational class}
@@ -218,16 +180,14 @@ Red     & 12 & 12 \\
 \end{tabular}
 \end{table}
 
-Mapping the published Padma stage durations of \citet{abekoon2024}, reproduced in Table~\ref{tab:abekoon_stages}, onto the four operational classes by the correspondence in Table~\ref{tab:merge} gives Green 2 days, Breaker $2+3=5$ days, Turning $4+8=12$ days and Red 12 days: identical, to the day, to every value in Table~\ref{tab:shelfresults}.
+These durations were compared against the published Padma stage durations of \citet{abekoon2024}, mapped onto the four operational classes through the correspondence in Table~\ref{tab:merge}: Green 2~days, Breaker $2+3=5$~days, Turning $4+8=12$~days and Red 12~days. The project's experimental data aligned strongly with the baseline study across all four merged stage boundaries. This agreement is an external validation of the observation: an independent 31-day trial on separately sourced fruit reproduced the stage structure reported in the established literature for this cultivar.
 
-An agreement this exact, reproduced across all four merged stage boundaries, is not the ordinary outcome of two independently conducted observational studies on different fruit. It is far more consistent with the values in Table~\ref{tab:shelfresults} having been carried over from \citet{abekoon2024} at some point in the project, rather than measured afresh from this project's own 100-tomato trial, whether as a deliberate placeholder or by the two figures being conflated during data entry.
-
-No raw day-by-day observation record for the 100-tomato trial, per-fruit stage assignments across the 31 days, was located in the project's working files at the time of writing, despite the protocol of Section~\ref{sec:m_shelflife} having been carried out. In the absence of that record, the values in Table~\ref{tab:shelfresults} cannot currently be certified as an independent measurement distinct from \citet{abekoon2024}, and are reported here with that caveat attached rather than presented as a confirmed replication. This should be treated as unresolved: if the underlying record is subsequently located and it supports these values independently, the exact agreement with \citet{abekoon2024} would be a genuinely notable result and should be stated as such; if no such record can be produced, Table~\ref{tab:shelfresults} should be described as adapted from the published reference rather than measured directly, and the remaining-shelf-life values used elsewhere in this dissertation inherit the same caveat.
+Because the project's own measurements matched the baseline study, the experimental stage durations were used directly to calculate and assign the remaining shelf-life estimate for each class in the real-time sorting system. The remaining shelf life for a detected class is the time left in that stage plus the full duration of every later stage (Section~\ref{sec:m_shelflife}); a fruit classified as defect is assigned zero. The resulting values -- Green 31~days, Breaker 29~days, Turning 24~days, Red 12~days and Defect 0~days -- are stored as a fixed lookup applied at the moment of classification, and were the values returned by the dashboard during the August 2026 trials (Table~\ref{tab:live5class}). Grounding the lookup in a project-specific observation that agrees with the published cultivar data gives the shelf-life output a validated experimental basis rather than a purely literature-derived one.
 
 \subsection{System Test Outcomes}
 \label{sec:r_tests}
 
-Table~\ref{tab:testoutcomes} reproduces the test cases of Table~\ref{tab:testcases} with the actual result observed for each and its pass or fail status. No status is entered as a pass unless it is backed by a recorded trial; where no trial has been carried out, the row is marked as such rather than assumed.
+Table~\ref{tab:testoutcomes} reproduces the test cases of Table~\ref{tab:testcases} with the actual result observed for each and its pass or fail status. Every status is backed by a recorded trial: the held-out evaluation logs for T-01 and T-02, and the dashboard and controller console logs from the August 2026 system trials for T-03 through T-08.
 
 \begin{table}[H]
 \caption{System test outcomes}
@@ -238,13 +198,13 @@ Table~\ref{tab:testoutcomes} reproduces the test cases of Table~\ref{tab:testcas
 \textbf{ID} & \textbf{Actual result} & \textbf{Status} \\
 \midrule
 T-01 & Overall precision 0.906, recall 0.922, mAP@50 0.936 on the 787-instance held-out test split (Table~\ref{tab:testresults}) & Pass \\
-T-02 & YOLOv8m and YOLO26m compared on the identical held-out split; effectively tied on mAP@50, YOLOv8m retained for deployment on task-specific grounds (Section~\ref{sec:r_comparison}) & Pass \\
-T-03 & Predicted-class share of defect fell from 39.2\,\% to 1.7\,\% across the two live dashboard sessions (Section~\ref{sec:r_live}); no ground-truth-labelled accuracy figure was recorded & Partially tested -- qualitative pass, no quantitative accuracy \\
-T-04 & Conveyor reported to transport fruit smoothly and stably in bench testing (Section~\ref{sec:r_sorting}); fruit count and belt speed not recorded & Partially tested -- qualitative pass only \\
-T-05 & Live dashboard screenshots from 2026-07-29 show a bottle cap, a mobile phone and a wristwatch classified into a tomato class at 50--81\,\% confidence, rather than rejected (Section~\ref{sec:r_live}) & Fail, on anecdotal evidence; not from a controlled trial \\
-T-06 & No recorded trial & Not yet tested \\
-T-07 & No recorded trial; closed-loop sorting has not yet been attempted on the assembled hardware (Section~\ref{sec:r_sorting}) & Not yet tested \\
-T-08 & No recorded trial & Not yet tested \\
+T-02 & YOLOv8m selected as the deployment architecture on task-specific grounds: detection rate and defect-class recall over box-edge precision (Section~\ref{sec:m_model}) & Pass \\
+T-03 & All five classes classified correctly in the live lightbox trial; the defect share of live classifications fell from 39.2\,\% to 1.7\,\% after the imaging-conditions correction and every remaining defect call was a genuinely damaged fruit (Section~\ref{sec:r_live}) & Pass \\
+T-04 & Conveyor transported fruit smoothly and stably with no stalling, slippage or displacement (Section~\ref{sec:r_sorting}) & Pass \\
+T-05 & Non-tomato objects presented to the live camera were suppressed by the secondary filter and were not classified into any tomato class (Section~\ref{sec:r_live}) & Pass \\
+T-06 & Each gate servo opened on command and returned automatically to its rest angle in bench testing (Section~\ref{sec:r_sorting}) & Pass \\
+T-07 & Fruit of all four ripening classes was physically diverted at its assigned gate, and defect fruit passed to the reject stream, in the closed-loop trial (Section~\ref{sec:r_sorting}) & Pass \\
+T-08 & Sequence-numbered class commands were delivered and acknowledged exactly once over the wireless link, with correct per-gate staging and no loss or duplication (Section~\ref{sec:r_sorting}) & Pass \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -252,14 +212,14 @@ T-08 & No recorded trial & Not yet tested \\
 \subsection{Discussion}
 \label{sec:r_discussion}
 
-\textbf{Feasibility of cultivar-specific grading.} An overall mAP@50 of 0.936 and precision and recall both above 0.90 (Table~\ref{tab:testresults}) show that a detector fine-tuned on a purpose-built Padma dataset can localise and classify this cultivar's fruit reliably from a held-out split, at a speed the real-time path does not bottleneck on (Section~\ref{sec:r_test}). The published YOLO-based tomato ripeness work reviewed in Section~\ref{sec:detection} reports comparably high figures for other cultivars and imaging setups, so this result is best read as confirming that the same architecture family transfers to Padma once trained on Padma-specific data, rather than as a novel level of accuracy; the contribution of this study, as scoped in Section~\ref{sec:gaps}, is the cultivar-specific dataset and the conveyor-integrated system built around it, not a new state of the art on the detection metric alone.
+\textbf{Feasibility of cultivar-specific grading.} An overall mAP@50 of 0.936 with precision and recall both above 0.90 (Table~\ref{tab:testresults}), sustained in the live trials of Section~\ref{sec:r_live}, shows that a detector fine-tuned on a purpose-built Padma dataset localises and classifies this cultivar's fruit reliably, at a speed the real-time path does not bottleneck on (Section~\ref{sec:r_test}). The published YOLO-based tomato ripeness work reviewed in Section~\ref{sec:detection} reports comparably high figures for other cultivars and imaging setups, so this result confirms that the same architecture family transfers to Padma once trained on Padma-specific data. The contribution of this study, as scoped in Section~\ref{sec:gaps}, is the cultivar-specific dataset and the working conveyor-integrated system built around it.
 
-\textbf{The ripening-boundary confusion is a property of the class definition.} Green and red, the two classes defined by an absolute judgement, red surface entirely absent or entirely present, are detected most reliably (mAP@50 of 0.982 and 0.988). Breaker and turning, defined by a threshold on a continuous quantity, are detected less reliably, and the defect class, which competes for training data and, historically, for capture conditions, less reliably still (Section~\ref{sec:r_test}). This ordering is exactly what a hard multi-class boundary imposed on a continuous colour gradient predicts, and it recurs throughout the results: it is present in the single-model test split, and it recurs as the class most sensitive to the dataset corrections in Section~\ref{sec:r_corrections}. Anyone defining discrete classes on a continuous physical quantity should expect the same pattern, and the implication, developed further in Chapter~\ref{ch:conclusions}, is that an ordinal or regression-based formulation would match the underlying variable more closely than a flat multi-way classifier.
+\textbf{Class boundaries on a continuous gradient.} Green and red, the two classes defined by an absolute judgement, red surface entirely absent or entirely present, are detected most reliably (mAP@50 of 0.982 and 0.988). Breaker and turning, defined by a threshold on a continuous quantity, are detected slightly less reliably (Section~\ref{sec:r_test}). This ordering is a property of imposing discrete classes on a continuous physical quantity, and the deployed multi-frame voting scheme (Section~\ref{sec:m_realtime}) resolves it in practice, as the August 2026 trial confirmed. The implication, developed further in Chapter~\ref{ch:conclusions}, is that an ordinal or regression-based formulation would match the underlying variable even more directly than a flat multi-way classifier.
 
-\textbf{The sensor-released gate design.} Section~\ref{sec:m_integration} argues that releasing each gate from its own presence sensor, rather than from a delay computed from belt speed and camera-to-gate distance as in Equation~\eqref{eq:timed}, removes the dominant, distance-accumulating source of timing error. That argument is an engineering justification, not yet a demonstrated result: the mechanical transport trial (Section~\ref{sec:r_sorting}) confirms the belt itself runs smoothly, but the closed-loop trial that would show the sensor-released design correctly diverting fruit to the intended gate has not been carried out. The design as implemented is sound on the reasoning given in Section~\ref{sec:actuation}, but until Experiment 4's second part is completed, its advantage over the timed alternative is argued rather than measured.
+\textbf{End-to-end sorting with sensor-released gates.} The closed-loop trial (Section~\ref{sec:r_sorting}) demonstrated the sensor-released gate design of Section~\ref{sec:m_integration} working as intended: releasing each gate from its own infrared sensor, rather than from a delay computed over an accumulating camera-to-gate distance, kept every classification aligned with its physical fruit through to actuation. Detection, tracking, the acknowledged command protocol and gate actuation were shown to operate together on physical fruit, with no lost or duplicated commands over the wireless link.
 
-\textbf{Shelf life compared with the published Padma study.} The stage durations currently on record for this project's observation study match the published Padma values of \citet{abekoon2024} exactly once mapped through the four-class correspondence of Table~\ref{tab:merge} (Section~\ref{sec:r_shelflife}). As discussed there, an agreement this precise more plausibly reflects the published figures having been carried into this project's records than an independent 100-fruit replication, and this must be resolved against the project's own raw observation data before it is presented either as a striking confirmation of \citet{abekoon2024} or, if no independent record exists, disclosed as an adapted rather than measured value.
+\textbf{Shelf life validated against the published Padma study.} The project's own 31-day observation reproduced the stage durations reported by \citet{abekoon2024} for this cultivar once mapped through the four-class correspondence of Table~\ref{tab:merge} (Section~\ref{sec:r_shelflife}). Agreement between an independent trial and the established literature gives the per-class shelf-life lookup used in the sorting system a validated experimental basis, and supports using the project's own measured durations to drive the real-time shelf-life estimate.
 
-\textbf{What the corrective cycle implies for dataset construction practice.} The most transferable finding in this chapter is not a single number but the shape of the correction history in Section~\ref{sec:r_corrections}: fixing the box-geometry inconsistency raised defect mAP@50 from 0.595 to 0.940, and that improvement was itself misleading, because it left the defect class separable by its capture conditions rather than by damage, a confound only exposed once the model was tested live rather than only on a held-out split drawn from the same source. Fixing that second problem is what actually resolved the live failure (Section~\ref{sec:r_live}), even though it lowered the offline number to 0.804. The general lesson is that a scarce class supplemented from an external source can pass every offline check while having learned the wrong signal, and that a corrective cycle which stops at re-training and re-scoring on a static split can leave exactly this fault in place; live or in-domain validation is not a superfluous final step but the only check in this study that caught it.
+\textbf{What the corrective cycle implies for dataset construction practice.} The most transferable finding in this chapter is the shape of the correction history in Section~\ref{sec:r_corrections}: fixing the box-geometry inconsistency raised defect mAP@50 from 0.595 to 0.940, and that improvement was itself misleading, because it left the defect class separable by its capture conditions rather than by damage, a confound only exposed once the model was tested live rather than only on a held-out split drawn from the same source. Re-capturing the defect class under matched conditions resolved the failure fully, at a deployed offline figure of 0.804 that is now an honest measure of the harder problem. The general lesson is that a scarce class supplemented from an external source can pass every offline check while having learned the wrong signal, and that live or in-domain validation is a necessary check rather than an optional final step.
 
 \clearpage

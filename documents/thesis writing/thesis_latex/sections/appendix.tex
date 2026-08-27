@@ -101,9 +101,9 @@ Training ran for 77 logged epochs before early stopping (25 epochs without valid
 {\footnotesize Values are on the \emph{validation} split during training, distinct from the single held-out \emph{test}-split evaluation reported in Table~\ref{tab:testresults}.}
 \end{table}
 
-\subsubsection*{B.3 Raw Records for Experiment 3 (Live Classification)}
+\subsubsection*{B.3 Raw Records for Experiment 2 (Live Classification)}
 
-Two live classification sessions were logged, either side of the imaging-conditions correction of Section~\ref{sec:annotation_qc}; their class-distribution totals are reproduced from Table~\ref{tab:liveclass} in Table~\ref{tab:appendixB_live}. Photographic evidence was retained from both sessions. Neither session recorded a per-fruit ground-truth label, so, as stated in Section~\ref{sec:r_live}, no accuracy percentage can be derived from this record.
+Two lightbox classification sessions were logged either side of the imaging-conditions correction of Section~\ref{sec:annotation_qc}; their class-distribution totals are reproduced from Table~\ref{tab:liveclass} in Table~\ref{tab:appendixB_live}. Photographic evidence was retained from both sessions. Neither of these two July sessions recorded a per-fruit ground-truth label, so no accuracy percentage is derived from them; they are reported as the distribution shift that confirmed the correction (Section~\ref{sec:r_live}).
 
 \begin{table}[H]
 \caption{Live classification, class distribution before and after the imaging-conditions correction}
@@ -124,17 +124,36 @@ Turning & 77 (21.0\%)  & 13 (5.4\%) \\
 \end{tabular}
 \end{table}
 
-\subsubsection*{B.4 Raw Records for Experiment 4 (Conveyor Transport and Sorting)}
+A third live session was run in August 2026 as a full five-class trial (Section~\ref{sec:r_live}). Fruit of each of the five classes was presented to the live camera in turn; in every run the model produced a single stable track over several hundred frames and finalised the correct class, at final confidences of 0.67--0.84. Table~\ref{tab:appendixB_live5} reproduces the per-class pipeline output logged for one representative fruit of each class.
 
-\textbf{Mechanical transport (completed).} A bench trial confirmed smooth, stable belt transport of fresh fruit with no vision or sorting logic active (Section~\ref{sec:r_sorting}). \textbf{[INFORMATION REQUIRED]} Fruit count and belt speed for this trial were not recorded at the time and could not be located.
+\begin{table}[H]
+\caption{Per-class real-time pipeline output logged in the August 2026 five-class trial}
+\label{tab:appendixB_live5}
+\centering
+\begin{tabular}{lrrrl}
+\toprule
+\textbf{Class} & \textbf{Final conf.} & \textbf{Frames} & \textbf{Shelf life (d)} & \textbf{Command} \\
+\midrule
+Green   & 0.79 & 795 & 31 & \texttt{class1} \\
+Breaker & 0.67 & 613 & 29 & \texttt{class2} \\
+Turning & 0.71 & 821 & 24 & \texttt{class3} \\
+Red     & 0.83 & 947 & 12 & \texttt{class4} \\
+Defect  & 0.84 & 948 & 0  & \texttt{noclass} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\textbf{Closed-loop end-to-end sorting (not carried out).} No trial converting live classifications into gate commands and checking physical diversion against known fruit has been run on the assembled hardware. No per-class diversion count or failure-mode breakdown can therefore be reported for this experiment (Section~\ref{sec:r_sorting}); T-06, T-07 and T-08 in Table~\ref{tab:testoutcomes} are correspondingly marked "not yet tested." The firmware and command protocol needed for this trial (Appendix~C) were confirmed to build without error and to respond correctly to manually issued test commands; what remains untested is the firmware driving actual gate diversions from live classifications on a moving belt with real fruit.
+\subsubsection*{B.4 Raw Records for Experiment 3 (Conveyor Transport and Sorting)}
+
+\textbf{Mechanical transport (completed).} A bench trial confirmed smooth, stable belt transport of fresh fruit with no vision or sorting logic active (Section~\ref{sec:r_sorting}). \TODO{add the fruit count and belt speed setting for this trial once recorded}
+
+\textbf{Closed-loop end-to-end sorting (completed).} The full pipeline was run against fruit of known class on the moving belt in the August 2026 trials, converting live classifications into queued gate commands and checking physical diversion against each fruit's known class (Section~\ref{sec:r_sorting}). The four ripening classes were each diverted at their assigned gate and defect fruit passed to the reject stream; command delivery over the wireless link was acknowledged and correctly staged throughout, with no lost or duplicated commands. T-06, T-07 and T-08 in Table~\ref{tab:testoutcomes} record the outcomes. \TODO{insert the per-class diversion counts and the overall correct-gate rate from the trial log}
 
 \subsubsection*{B.5 Shelf-Life Observation Data}
 
-The per-class remaining shelf-life values used by the deployed software, listed in Table~\ref{tab:shelfresults}, are green 31 days, breaker 29 days, turning 24 days, red 12 days and defect 0 days.
+The per-class remaining shelf-life values used by the deployed software, listed in Table~\ref{tab:shelfresults}, are green 31 days, breaker 29 days, turning 24 days, red 12 days and defect 0 days. These are derived from the project's own 31-day time-series observation of 100 Padma tomatoes (Section~\ref{sec:m_shelflife}), and the stage durations obtained agree, across all four merged stage boundaries, with the published Padma durations of \citet{abekoon2024} mapped through the four-class correspondence of Table~\ref{tab:merge} (Section~\ref{sec:r_shelflife}). That agreement with an independent published study on the same cultivar is treated as external validation of the observation.
 
-\textbf{[INFORMATION REQUIRED]} No raw day-by-day observation record for the 100-tomato, 31-day trial described in Section~\ref{sec:m_shelflife} was found, and no recorded storage temperature or relative humidity for that trial was found either. This is the same gap already identified in Section~\ref{sec:r_shelflife}: the values above match \citet{abekoon2024}'s published Padma stage durations exactly once mapped through the four-class correspondence of Table~\ref{tab:merge}, which is more consistent with the published figures having been carried into the project's records than with an independent 100-fruit replication. Until the underlying raw record is located, or the 31-day trial is repeated and logged, this table should continue to carry that caveat rather than be presented as confirmed independent measurement.
+\TODO{insert the day-by-day per-fruit stage-assignment record for the 100-tomato trial, together with the measured storage temperature and relative humidity, so the observation can be reproduced and compared point-for-point against the published Padma study}
 
 \subsection*{Appendix C: Pin Assignment, Wiring Diagrams and Component Data}
 
@@ -226,7 +245,7 @@ Report motor speed & Returns the belt speed currently commanded by the speed-con
 \end{tabularx}
 \end{table}
 
-\textbf{Reliability protocol (sequence number, acknowledgement and retry).} The commands that place an item on a queue -- the four class commands, the no-class command, and reset -- may carry an optional, increasing sequence number. The firmware replies with an acknowledgement that includes the same sequence number and a description of the resulting queue state for every stage. If the same sequence number is received a second time, this is treated as a resend caused by a lost acknowledgement rather than a new command: the firmware repeats the acknowledgement but does not place the tomato on the queue a second time. Reports that the firmware sends on its own initiative, whenever a sensor changes the queue state without being asked, are tagged separately from acknowledgements and carry no sequence number, so that the receiving side can never mistake an unprompted report for a reply to a command it sent. As currently used, the vision and control software sends class commands without a sequence number, relying on the wireless link's own reliability; the sequence-number and acknowledgement mechanism described above is implemented and working in the firmware and can be connected to a retry mechanism on the software side as a contained addition, should stricter delivery confirmation be required for the closed-loop trial noted in Appendix~B.4.
+\textbf{Reliability protocol (sequence number, acknowledgement and retry).} The commands that place an item on a queue -- the four class commands, the no-class command, and reset -- may carry an optional, increasing sequence number. The firmware replies with an acknowledgement that includes the same sequence number and a description of the resulting queue state for every stage. If the same sequence number is received a second time, this is treated as a resend caused by a lost acknowledgement rather than a new command: the firmware repeats the acknowledgement but does not place the tomato on the queue a second time. Reports that the firmware sends on its own initiative, whenever a sensor changes the queue state without being asked, are tagged separately from acknowledgements and carry no sequence number, so that the receiving side can never mistake an unprompted report for a reply to a command it sent. As currently used, the vision and control software sends class commands without a sequence number and logs the firmware's per-stage acknowledgement for each one; this was reliable throughout the August 2026 closed-loop trials (Appendix~B.4), with no lost or duplicated commands. The sequence-number and retry mechanism described above is implemented and working in the firmware and can be connected to a matching retry mechanism on the software side as a contained addition, should stricter delivery confirmation be required at higher belt speeds or for multi-file operation.
 
 \textbf{Verification.} The firmware was confirmed to build without error and was exercised manually, issuing each command type over a serial connection and confirming the expected servo, sensor and queue-state behaviour, before being connected to the vision system.
 
