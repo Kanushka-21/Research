@@ -49,6 +49,14 @@ if HIDE_LIBRARY_LOGS:
     warnings.filterwarnings("ignore", category=FutureWarning)
     logging.getLogger("streamlit").setLevel(logging.ERROR)
 
+# On a laptop with a built-in webcam, DSHOW index 0 is usually the built-in
+# "Integrated Camera", not the external USB camera mounted on the rig --
+# index 1 is the USB camera on this machine. If the feed opens the wrong
+# camera (built-in flashlight/LED turns on instead of the USB camera),
+# change this index -- check Settings > Bluetooth & devices > Cameras, or
+# Device Manager > Cameras, for the enumeration order on a given machine.
+CAMERA_INDEX = 1
+
 from conveyor_core import (
     MODEL_PATH,
     CONFIDENCE_THRESHOLD,
@@ -110,7 +118,7 @@ def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCap
     couple of times a beat apart reproduces that same wake-up without
     needing the user to open another app first."""
     for attempt in range(attempts):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(CAMERA_INDEX)
         time.sleep(0.5)
         if cap.isOpened():
             try:
