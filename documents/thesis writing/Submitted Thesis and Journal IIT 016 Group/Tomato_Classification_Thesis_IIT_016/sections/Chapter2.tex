@@ -1,0 +1,95 @@
+\section{Literature Review}
+\label{ch:literature}
+
+\subsection{Theoretical Background}
+\label{sec:theory}
+
+An automated grading and sorting machine draws on three areas: how a tomato ripens, which decides what is being graded; the detection method that does the grading; and the control design that turns a grading decision into a physical action. Each is reviewed below.
+
+\subsubsection{Ripening Physiology and Cultivar-Specific Grading}
+\label{sec:ripening}
+
+A tomato keeps ripening after it is picked. The plant hormone ethylene makes the skin lose its green colour while red pigments, mainly lycopene, build up, so the surface changes from all green to deep red. At the same time the cell walls break down and the fruit softens \citep{abekoon2024}. Once the fruit is soft it bruises easily, and bruised or broken skin lets decay organisms in, so soft fruit is fragile for selling.
+% TODO: add one dedicated post-harvest physiology reference here (a text or
+% review covering pectin methylesterase and polygalacturonase). The Word
+% draft cited allo2025 for this, which is a CNN classification paper and
+% does not support the claim.
+
+Because the surface colour follows this internal change, colour is what visual grading is based on. The \acrfull{USDA} standard sets six stages by the share of red skin: green; breaker (up to 10\,\%); turning (10--30\,\%); pink (30--60\,\%); light red (60--90\,\%); and red (over 90\,\%) \citep{usda1991}. These stages were made for grading and reporting by eye, not for a camera. The two smallest bands fall exactly where a camera is weakest: with packhouse lighting, a moving belt and shine off the glossy skin, telling 8\,\% red from 12\,\% red is not a reliable measurement.
+
+General standards also do not carry well from one variety to another. \citet{nalupano2024} had to retrain a MobileNetV2 network just for the Philippine Kinalabasa variety; it reached 94\,\% accuracy but only 64\,\% specificity, which shows both that variety-specific training is needed and that a high headline accuracy can hide poor separation between classes. For Sri Lanka, \citet{abekoon2024} studied the Padma variety directly. They kept 100 greenhouse-grown fruits, 25 from each of four districts, in a room set to the average conditions of sixty Sri Lankan markets (29\,\textdegree C, 80\,\% relative humidity, 810 lux), and photographed them every day until they spoiled, giving 12,342 images. Their stage lengths are shown in Table~\ref{tab:abekoon_stages}. That study gives both a colour-to-time relationship for this variety and the six-stage frame that the present study builds its own classes on.
+
+\begin{table}[H]
+\caption{Post-harvest stage durations reported for the Padma variety under simulated market conditions}
+\label{tab:abekoon_stages}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Maturity stage} & \textbf{Days in stage} & \textbf{Post-harvest day range} \\
+\midrule
+Green       & 2  & 0--2   \\
+Breakers    & 2  & 3--4   \\
+Turning     & 3  & 5--7   \\
+Pink        & 4  & 8--11  \\
+Light red   & 8  & 12--19 \\
+Red         & 12 & 20--31 \\
+\midrule
+\textbf{Total} & \textbf{31} & \\
+\bottomrule
+\end{tabular}
+
+\vspace{2mm}
+{\footnotesize Source: \citet{abekoon2024}, Table 4. Conditions: 29\,\textdegree C, 80\,\% relative humidity, 810 lux; 100 fruits.}
+\end{table}
+
+\subsubsection{Real-Time Single-Stage Object Detection}
+\label{sec:detection}
+
+Early farm vision systems used fixed colour and texture rules with simple classifiers. \citet{santoso2024} compared \acrshort{RGB}, \acrshort{HSV} and CMYK colour spaces with a correlation-matching method and found CMYK separated ripeness best, with a correlation of 0.87. \citet{liu2019} combined shape-gradient features with a \acrfull{SVM} and a colour rule to remove false detections. \citet{garcia2019} judged ripeness from simple pixel-colour statistics. These methods are light to run, but they rely on features chosen by hand and get worse when the light, shadows or background differ from the setup they were tuned on \citep{ifmalinda2023}.
+
+Convolutional neural networks removed the need to choose features by hand, learning them from the data instead. \citet{allo2025} trained such a network on 3,600 public images across three ripeness classes, and \citet{centino2025} reached 95.52\,\% on a ripe-or-unripe task after first removing the background and changing the colour space. \citet{waseem2025} did the same task on limited hardware, using a ResNet-18 network with pruning and quantisation to keep it fast. All three, though, label a whole image at once. A sorting line also needs to know \emph{where} each fruit is, because one frame can hold several fruits and each needs its own decision.
+
+Object detectors do this. Two-stage detectors such as Faster \acrshort{RCNN} first suggest regions with a \acrfull{RPN} and then classify them; this is accurate but too slow for a moving belt. Single-stage detectors in the \acrshort{YOLO} family instead predict the boxes and the class scores in one pass over the image \citep{redmon2016}. YOLOv8 is anchor-free and combines image features at several scales efficiently, which gives the speed needed for real-time work \citep{terven2023}.
+
+Most tomato-specific work adapts this family to hard viewing conditions. \citet{yang2025} and \citet{fan2026} changed YOLOv8 to cope with hidden fruit and changing light in greenhouses and orchards; \citet{huang2025} added a small-object detection head and multi-scale fusion to YOLOv10; \citet{wang2026} and \citet{ding2026} made lighter versions for small devices. \citet{safira2026} compared YOLOv8 directly with a real-time detection transformer for tomato ripeness, and is the clearest published reason to prefer a \acrshort{YOLO} detector for this task. Almost all of this work is for harvesting robots in the field or greenhouse, where the main problems are hidden fruit and busy backgrounds. A packhouse belt is the opposite case: a plain background and usually one fruit in view, but the decision must be made in the few seconds the fruit is visible and then carried out by a machine.
+
+\subsubsection{Learned Imaging Conditions as a Misleading Cue}
+\label{sec:domainshift}
+
+A detector learns whatever tells its classes apart in the training images, even things that have nothing to do with the fruit. If one class was photographed under different light or against a different background from the rest, the network can learn that difference instead of the fruit feature it was meant to learn. It then looks accurate on a test set drawn from the same source, but fails on live input. The danger is greatest when a class is rare and is filled out with images from an outside source, which is exactly the case for a defect class. This is a known risk. The usual fixes are to keep the capture conditions the same for every class, and to grow a small class with augmentation rather than with outside images \citep{shorten2019, buslaev2020}. It is still rarely reported in applied farm-vision papers, which usually give only final scores and not the debugging history behind them. Section~\ref{sec:annotation_qc} describes a case of this found in the present study.
+
+\subsubsection{Conveyor Actuation and Control}
+\label{sec:actuation}
+
+Once a fruit is classified, its gate must open at the moment the fruit reaches it. The simple way is to work out a waiting time from the belt speed and the distance from the camera to the gate: the further the gate, the longer the wait. The weakness of this method is that it assumes the belt speed is constant and known. On a real rig the belt speed changes with tension, load and drive slip, and because the distance used is the whole camera-to-gate length, the timing error builds up along the line and is worst at the last gate.
+
+The better way is to detect the fruit arriving instead of predicting it. A presence sensor is placed at each gate, and each classification waits in a queue until that gate's sensor is triggered. Existing rigs already use belt sensors, but mostly for another job: in \citet{moya2025}, sensors along the belt detect fruit and start the camera, while the sorting servos act on the classification result. \citet{geetha2025} likewise link detection to a servo-driven sorting prototype. Releasing each gate from its own sensor, so that no timing calculation is left in the actuation path, is the design used here.
+
+\subsubsection{Embedded Integration and Wireless Command Transfer}
+\label{sec:embedded}
+
+Farm vision systems are usually split between a host computer that runs the model and a microcontroller that drives the actuators. \citet{patria2025} used an ESP32-CAM with a small neural network on a mobile field robot, and \citet{saxena2025} paired ESP32 sensor nodes with a Raspberry Pi running YOLOv8, using pruning and quantisation for a 35\,\% speed-up. Both show this split of work, though in both the microcontroller only senses and does not drive a sorting mechanism.
+
+When the link between the host and the controller is wireless, a command may not arrive. A serial-over-Bluetooth link on a running rig can drop packets, and in sorting a lost command is not just a resend: it takes a fruit out of the queue and throws off every gate assignment after it. So the command protocol needs a sequence number on each command, a clear acknowledgement, and duplicate rejection, so that a resent command is acknowledged again but not acted on twice.
+% NOTE: the Word draft attributed all of the above to patria2025. That paper
+% is a field mobile robot with no conveyor, no gate and no queue, and does
+% not support these claims. The argument is retained here on engineering
+% grounds and is demonstrated in Chapter 3, not asserted from a citation.
+
+\subsubsection{Shelf-Life Estimation and Operational Indicators}
+\label{sec:shelflife_lit}
+
+Shelf life is how long produce stays safe, firm and good to eat under set storage conditions \citep{tarlak2023}. The literature estimates it in two ways. The first measures it directly, by keeping a batch of fruit under set conditions and recording how long each stage lasts, as \citet{abekoon2024} did for the Padma variety. The second learns it, as \citet{geetha2025} did with deep models linked to a sorting prototype. There are also non-destructive instruments: \citet{borba2021} used a portable \acrfull{NIR} spectrometer to check tomato quality in the field, and \citet{liu2024} combined several sensors for maturity. These read internal quality that a colour camera cannot, but need instruments a low-cost packhouse rig cannot carry.
+
+Either way, the estimate is only useful when it is added up. A packhouse manager needs throughput, class share, defect ratio and mean remaining shelf life for a whole batch, not a figure for one fruit \citep{geetha2025}.
+
+\subsection{Gaps in Knowledge}
+\label{sec:gaps}
+
+\textbf{No conveyor-integrated detection system exists for the Padma variety.} \citet{abekoon2024} characterised Padma ripening and post-harvest duration thoroughly, but the work is offline classification of static images of single fruits, with no detector, no localisation and no physical sorting. Conversely, conveyor-integrated systems such as \citet{moya2025} are calibrated for other cultivars in other production contexts. No published work reports a detection model trained on Padma fruit and evaluated on an operating sorting line, and no public Padma detection dataset spanning four ripening stages and a defect class exists to build one from.
+
+\textbf{Gate release is generally predicted rather than detected.} Belt sensors are already used in sorting rigs, but predominantly to trigger image capture \citep{moya2025}. Actuation itself is usually timed from the belt speed and the camera-to-gate distance, which makes sorting accuracy depend on the belt speed staying constant and lets the error grow along the line. A control architecture in which each gate is released by its own presence sensor, with classifications held in a queue until arrival, removes that dependency but is not established in the tomato sorting literature.
+
+\textbf{Grade-to-shelf-life mapping and line-level reporting are rarely combined with an operating rig.} This gap is the narrowest of the three, and must be stated carefully. \citet{geetha2025} do link deep-learning grading to shelf-life prediction and a servo-driven sorting prototype, so it cannot be claimed that no such system exists. What remains absent is a system in which the shelf-life values are measured for the specific cultivar being graded, rather than learned from generic data, and in which each classification and its associated remaining shelf life are logged to a persistent record that drives live batch-level operating indicators. It is that combination, for this cultivar, that the present study addresses.
+
+\clearpage

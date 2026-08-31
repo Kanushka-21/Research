@@ -1,0 +1,60 @@
+\section{Conclusion}
+\label{ch:conclusions}
+
+\subsection{Summary of Findings}
+\label{sec:c_summary}
+
+This study set out to answer four questions, and Chapter~\ref{ch:results} answers each of them.
+
+\textbf{Detection accuracy.} A single YOLOv8-medium detector trained on the purpose-built Padma dataset reached an overall precision of 0.906, recall of 0.922 and mAP@50 of 0.936 on the held-out test set (Table~\ref{tab:testresults}). All five classes were detected well, with green and red the strongest at mAP@50 of 0.982 and 0.988. A cultivar-specific dataset is therefore enough to grade Padma fruit reliably from a single camera view.
+
+\textbf{Per-fruit decision.} Reading one class from many frames works. The system tracks each fruit and takes a confidence-weighted vote over every frame it appears in. In the August 2026 live trial each fruit produced one stable track over several hundred frames and the correct final class, at confidences between 0.67 and 0.84 (Table~\ref{tab:live5class}). This removes the effect of a single blurred or over-bright frame.
+
+\textbf{Control architecture.} Releasing each gate from its own infrared sensor, and holding classifications in a per-gate queue until the fruit arrives, keeps sorting correct without assuming a fixed belt speed (Section~\ref{sec:m_integration}). In the closed-loop trial every ripening class was diverted at its own gate and defect fruit passed to the reject stream, with no lost or repeated commands (Section~\ref{sec:r_sorting}).
+
+\textbf{Shelf life and reporting.} A 31-day observation of \textit{Padma} 50 green tomatoes gave stage lengths that were turned into a remaining shelf-life value for each class: green 31, breaker 29, turning 24, red 12 and defect 0 days (Table~\ref{tab:shelfresults}). These values agreed closely with the published Padma study of \citet{abekoon2024}. Each classification, its confidence and its shelf-life value are written to a database and shown on the live dashboard alongside throughput, class share and defect ratio.
+
+\subsection{Achievement of Objectives}
+\label{sec:c_objectives}
+
+All six specific objectives were met.
+
+\begin{enumerate}
+    \item \textbf{Dataset.} A Padma dataset of 7{,}849 images across the four ripening stages and a defect class was built, annotated and split (Table~\ref{tab:instances}).
+    \item \textbf{Detector.} A YOLOv8-medium model was trained and tested once on the held-out split, with per-class and overall scores in Table~\ref{tab:testresults}. Inference takes 6.7~ms per frame, well inside the 33~ms budget at 30~\acrshort{FPS}. The single-stage design suits the task of finding and grading several fruit per frame at speed.
+    \item \textbf{Per-fruit policy.} A tracking-and-voting policy, with a strict rule for the defect class, was implemented and shown to work live (Section~\ref{sec:r_live}).
+    \item \textbf{Shelf life.} Stage durations were measured over 31 days and turned into a per-class remaining shelf-life value used at the moment of classification (Section~\ref{sec:r_shelflife}).
+    \item \textbf{Conveyor rig.} A low-cost belt rig controlled by an ESP32, with each gate released by its own infrared sensor, was built and run end to end (Section~\ref{sec:r_sorting}).
+    \item \textbf{Dashboard.} A live dashboard reports throughput, class distribution, defect ratio and mean remaining shelf life from the logged record (Section~\ref{sec:m_softwaredev}).
+\end{enumerate}
+
+\subsection{Limitations}
+\label{sec:c_limitations}
+
+\begin{enumerate}
+    \item \textbf{Classes cut from a colour gradient.} Green, breaker and turning are split by fixed limits on the share of red surface. Fruit close to a limit is truly borderline, so a small amount of mixing between neighbouring stages is expected and cannot be trained away.
+    \item \textbf{Boundaries set by eye.} The 30\,\% and 80\,\% red-surface limits were judged visually. No colour meter was used, so these limits carry some human judgement.
+    \item \textbf{Split by image, not by fruit.} Several photos were taken of each fruit, and the split was made per image. Very similar images of one fruit may fall in different splits, which can make the test scores slightly high.
+    \item \textbf{One fruit at a time.} The tracker follows a single fruit in view. It does not keep separate identities for several fruit at once, which limits the top speed of the line.
+    \item \textbf{One capture setting.} All training images were taken in one lightbox. The live trials worked across different backgrounds under good light, but very poor or changing light has not been tested.
+    \item \textbf{Static shelf-life table.} The shelf-life value depends only on the class, not on the state of the single fruit, and is an upper limit rather than an exact figure.
+\end{enumerate}
+
+\subsection{Recommendations for Future Work}
+\label{sec:c_future}
+
+\begin{enumerate}
+    \item \textbf{Treat ripeness as an order, not separate boxes.} A model that predicts the share of red surface, or an ordinal output, would follow the real colour change and make a one-stage error cost less than a two-stage error.
+    \item \textbf{Measure the boundaries.} A colour-meter reading for a sample of fruit at labelling time would replace the visual limits with measured ones.
+    \item \textbf{Split by fruit.} Keeping every image of one fruit in the same split would remove the near-duplicate leak.
+    \item \textbf{Track several fruit at once.} Giving each fruit its own identity across frames would lift the single-file limit and raise throughput.
+    \item \textbf{Test in harder light.} Running and re-scoring the system under mixed and low light would show how far the single-setting dataset carries.
+    \item \textbf{Shelf life per fruit.} Predicting shelf life from the look of each fruit, not just its class, would give a tighter estimate.
+\end{enumerate}
+
+\subsection{Concluding Remarks}
+\label{sec:c_closing}
+
+This work produced a complete, working sorting line for the Padma tomato: a cultivar-specific dataset, a real-time detector, a tracking-and-voting decision step, a sensor-triggered conveyor that sorts into four ripening streams plus a reject stream, a measured shelf-life value for each grade, and a live dashboard. For post-harvest handling in Sri Lanka it shows that low-cost hardware and a single camera can grade this local variety and give a packhouse both a physical sort and useful batch information. The most transferable lesson is the dataset correction in Section~\ref{sec:r_corrections}: a small class filled out with outside images can score well offline while having learned the wrong cue, and only live, in-domain testing exposes it. Any project that trains a detector on a scarce class should plan for that check.
+
+\clearpage

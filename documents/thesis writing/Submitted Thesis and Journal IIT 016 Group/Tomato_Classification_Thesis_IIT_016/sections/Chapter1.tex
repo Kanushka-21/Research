@@ -1,0 +1,84 @@
+\section{Introduction}
+\label{ch:introduction}
+
+\subsection{Background of the Study}
+\label{sec:background}
+
+Post-harvest loss is a major source of inefficiency in the supply of perishable fresh produce, and it falls heaviest on growers in regions where cold-chain infrastructure is limited and grading is performed by hand. The tomato (\textit{Solanum lycopersicum}) is particularly exposed. It is a climacteric fruit, so respiration and ethylene production continue after harvest and drive a rapid sequence of chlorophyll loss, carotenoid accumulation and cell-wall softening; once softening is advanced the fruit bruises easily and becomes vulnerable to fungal decay \citep{abekoon2024}.
+
+In Sri Lanka the locally recommended Padma variety is an important cash crop for smallholders in the Badulla, Nuwara Eliya, Kandy and Matale districts, valued for its resistance to bacterial wilt and its keeping quality \citep{abekoon2024}. Fruit reaching collecting centres in these districts is still graded visually by hand. Operators sort bulk batches by the proportion of red surface colour into categories such as green, breaker, turning and red. Manual inspection of this kind is subjective, varies between operators and across a working shift, and requires repeated handling of every fruit. Two consequences follow. Misgraded overripe fruit entering a packed batch accelerates the ripening of its neighbours, and the repeated handling itself causes microscopic skin damage that provides an entry route for decay organisms \citep{abekoon2024}.
+
+Automated grading offers a route around both problems. Convolutional neural networks, and in particular single-stage detectors of the \acrfull{YOLO} family, now classify produce accurately and quickly enough to run on a moving conveyor \citep{moya2025, terven2023}, and when coupled to electronic actuators they can grade and divert fruit without a human touching it \citep{geetha2025}. Applying such a system to a specific local cultivar is not, however, a matter of deploying an existing model. It requires a dataset built for that cultivar, a decision policy suited to the way the fruit actually presents itself on a belt, and mechanical and control design that diverts fruit reliably without bruising it.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/Tomato Intro .jpeg}
+\caption{Tomato cultivation areas in the Badulla District and major local cultivars.}
+\label{fig:tomato-introduction}
+\end{figure}
+
+\subsection{Problem Identification}
+\label{sec:problem}
+
+The post-harvest handling of Padma fruit presents three linked problems.
+
+At the biological level, the fruit softens quickly once ripening begins and is easily bruised by manual handling, so every additional handling step shortens the period during which the fruit remains saleable \citep{abekoon2024}.
+
+At the computational level, published ripeness models are trained predominantly on other cultivars, on other datasets and under other imaging conditions. Models built for one cultivar transfer poorly to another whose size, surface texture and colour progression differ; \citet{nalupano2024} showed this directly when a general architecture had to be retrained specifically for the Philippine Kinalabasa variety. A further and less frequently reported difficulty is that a detector may learn the imaging conditions of a class rather than the class itself, so that a model performing well on an offline test split fails on live camera input. No public dataset exists for Padma fruit annotated for object detection across four ripening stages together with a defect class.
+
+At the system level, most work reports a model evaluated offline on static images and stops there. Where a physical sorting rig is built, gate actuation is commonly timed from an assumed constant belt speed, which accumulates error as belt speed, load and drive slip vary. Furthermore, a grading decision by itself tells a packhouse manager only what a fruit is now, not how long it will remain saleable, and gives no batch-level view of the line.
+
+\subsubsection{Research Questions}
+\label{sec:questions}
+
+\begin{enumerate}
+    \item How accurately can a single-stage object detector localise and classify Padma fruit into four ripening stages and a defect class from a purpose-built, cultivar-specific dataset, and which architecture within that family performs best on this task?
+    \item What decision policy converts a stream of per-frame detections into one reliable classification per fruit as it travels beneath a camera, given that the ripening classes lie on a continuous colour gradient?
+    \item What control architecture synchronises classification with physical gate actuation on a conveyor without relying on an assumed constant belt speed?
+    \item How can measured post-harvest stage durations for Padma fruit be converted into a remaining shelf-life value attached to each graded fruit, and reported alongside line-level operating indicators on a live dashboard?
+\end{enumerate}
+
+\subsubsection{Relevance and Significance of the Study}
+\label{sec:significance}
+
+There is a clear economic case for this work. Manual grading requires repeated human inspection, which is slow, costly, and inconsistent different inspectors judge ripeness differently, and this inconsistency lets overripe fruit slip into packed batches \citep{abekoon2024}. Replacing repeated manual checks with a single automated pass reduces both handling damage and this inspector-to-inspector inconsistency.
+
+This study makes three scientific contributions.
+
+First, it produces a new dataset: annotated images of the Padma tomato cultivar, labelled across four ripening stages plus a defect class. No such dataset currently exists.
+
+Second, it does not treat detection accuracy as just an offline number. Instead, it builds and tests a real, working sorting machine that uses the detector's output to physically sort fruit, triggered by sensors. Reporting this failure, and how it was corrected, is itself a useful contribution, since this type of mistake is invisible in ordinary offline test scores and only shows up when the system is tested in real, live conditions.
+
+Third, the study links each grading decision to a remaining shelf-life estimate for this specific cultivar, and shows both the grade and the shelf-life estimate together on an operator dashboard. This means the system's output is not just a physical sort into bins it also gives the operator useful logistical information, namely how long each batch can still be stored or sold.
+
+
+\subsection{Research Objectives}
+\label{sec:objectives}
+
+\subsubsection{Aim}
+
+To design, develop and evaluate an integrated, real-time detection and mechatronic sorting system for the Sri Lankan Padma tomato variety, which grades fruit into four ripening stages and a defect class, diverts it physically, associates each graded fruit with a measured remaining shelf life, and reports line-level operating indicators on a live dashboard.
+
+\subsubsection{Specific Objectives}
+
+\begin{enumerate}
+    \item To compile, annotate and preprocess a cultivar-specific image dataset representing four ripening stages (green, breaker, turning, red) and a defect class for the Padma variety.
+    \item To train and evaluate a YOLOv8 object detector on this dataset against a held-out test split, and to compare it under identical data conditions with a YOLO26-medium model in order to justify the deployed architecture on evidence rather than assertion.
+    
+    \item To measure the duration of each ripening stage for Padma fruit under room-temperature storage, and to derive from those durations a per-class remaining shelf-life value applied at the moment of classification.
+    \item To design and construct a conveyor prototype controlled by an ESP32 microcontroller, in which gate actuation is released by an \acrfull{IR} presence sensor at each gate rather than by an elapsed time computed from belt speed.
+    \item To develop a live dashboard that reports throughput, class distribution, defect ratio and mean remaining shelf life from the logged detection record.
+\end{enumerate}
+
+\subsection{Expected Outcomes}
+\label{sec:outcomes}
+
+\begin{enumerate}
+    \item An annotated Padma-specific detection dataset covering four ripening stages and a defect class, available to support further localised research.
+    \item A trained model for Padma ripening stage and defect condition, with performance reported on a held-out test split and against a comparison architecture.
+    \item A working conveyor sorting prototype using non-contact infrared triggering and servo-actuated diverter gates.
+    \item A per-class remaining shelf-life mapping derived from measured stage durations for this cultivar.
+    \item A live dashboard reporting throughput, class distribution, defect ratio and mean remaining shelf life over the logged detection record.
+\end{enumerate}
+
+\clearpage

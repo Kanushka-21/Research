@@ -1,0 +1,170 @@
+%=======================================================================
+%  AI-BASED RIPENING STAGE DETECTION AND AUTOMATED SORTING SYSTEM
+%  FOR THE PADMA TOMATO VARIETY (Solanum lycopersicum) IN SRI LANKA
+%
+%  Uva Wellassa University -- Faculty of Applied Sciences
+%  Department of Computer Science and Informatics
+%
+%  Formatting follows the official UWU Thesis LaTeX Template exactly,
+%  informed by SECTION-H "DISSERTATION PREPARATION GUIDELINES AND FORMAT".
+%    - A4, single sided, Times New Roman 12 pt
+%    - Margins: left 3.85 cm; right, top, bottom 2.5 cm
+%    - Line spacing 1.5, one blank line between paragraphs
+%    - Page numbers bottom centre
+%    - Roman numerals: prefatory pages only
+%    - Arabic numerals: Chapters 1-5, References and Appendices
+%    - Author-Year (Harvard) citation system
+%
+%  Compile with: pdflatex -> bibtex -> makeglossaries -> pdflatex x2
+%=======================================================================
+
+\documentclass[a4paper, 12pt]{article}
+
+%----------------------- Packages -------------------------------------
+% Package list matches the official UWU Thesis LaTeX Template, plus
+% textcomp (required for \textdegree, used in Chapters 2 and 3).
+\usepackage{textcomp}          % \textdegree and related symbols
+\usepackage{mathptmx}          % Times New Roman for text and maths
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}          % professional rules for all tables
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{subcaption}        % also provides \captionsetup, via caption
+\usepackage{hyperref}
+\usepackage[acronym, toc]{glossaries}
+
+\newdateformat{monthyeardate}{\monthname[\THEMONTH] \THEYEAR}
+\makeglossaries
+
+%----------------------- Referencing ----------------------------------
+% Harvard / Author-Year system, as required by guideline H:2(7)A.
+\bibliographystyle{agsm}
+
+%----------------------- Page geometry --------------------------------
+\geometry{left=3.85cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+\setstretch{1.5}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em plus 0.2em minus 0.2em}  % one blank line between paragraphs
+
+%----------------------- Table and figure captions --------------------
+\captionsetup[table]{labelsep=colon, singlelinecheck=false,
+                     justification=raggedright, font=normalsize}
+\captionsetup[figure]{labelsep=colon, singlelinecheck=false,
+                      justification=raggedright, font=normalsize}
+\renewcommand{\arraystretch}{1.15}
+
+% Chapter-based numbering, so items read as Table 3.1, Figure 3.2,
+% Equation (3.4) -- matching the List of Figures and List of Tables.
+\numberwithin{table}{section}
+\numberwithin{figure}{section}
+\numberwithin{equation}{section}
+
+% Tables are set single spaced and one size down so that wide tables fit
+% the 14.65 cm text block; body text stays at 12 pt / 1.5 spacing. The hook
+% is applied to the float, not to tabular, because tabularx measures its X
+% columns over several passes and must not see the font change mid-way.
+\usepackage{etoolbox}
+\AtBeginEnvironment{table}{\setstretch{1.0}\small}
+
+%----------------------- Heading formats ------------------------------
+\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\itshape}{\thesubsubsection}{1em}{}
+\titlespacing*{\section}{0pt}{20pt plus 4pt minus 2pt}{20pt plus 2pt minus 2pt}
+
+%----------------------- Convenience macros ---------------------------
+% Marks a value that still needs to be supplied before submission.
+% Delete every occurrence before the final print.
+\newcommand{\TODO}[1]{\textbf{[TO BE SUPPLIED: #1]}}
+
+\begin{document}
+
+%======================================================================
+%  PREFATORY PAGES  --  Roman numerals  (guideline H:1 and H:2(6))
+%======================================================================
+\pagenumbering{roman}
+
+\input{preliminary_pages/title_page}
+
+\titleformat{\section}{\large\bfseries\centering}{\thesection}{1em}{}
+
+\addcontentsline{toc}{section}{Declaration}
+\input{preliminary_pages/declaration}
+\cleardoublepage
+
+\addcontentsline{toc}{section}{Acknowledgement}
+\input{preliminary_pages/acknowledgement}
+\cleardoublepage
+
+\addcontentsline{toc}{section}{Contents}
+\tableofcontents
+\cleardoublepage
+
+\addcontentsline{toc}{section}{Abstract}
+\input{preliminary_pages/abstract}
+\cleardoublepage
+
+\addcontentsline{toc}{section}{List of Figures}
+\listoffigures
+\cleardoublepage
+
+\addcontentsline{toc}{section}{List of Tables}
+\listoftables
+\cleardoublepage
+
+\addcontentsline{toc}{section}{List of Abbreviations}
+\input{preliminary_pages/abbreviations}
+\cleardoublepage
+
+%======================================================================
+%  MAIN BODY  --  Arabic numerals, page 1 begins here
+%======================================================================
+\titleformat{\section}[display]
+  {\large\bfseries}
+  {\hfill Chapter \thesection}
+  {0pt}
+  {\rule{\textwidth}{0.4pt}\\}
+
+\pagenumbering{arabic}
+
+\input{sections/chapter1}
+\newpage
+
+\input{sections/chapter2}
+\newpage
+
+\input{sections/chapter3}
+\newpage
+
+\input{sections/chapter4}
+\newpage
+
+\input{sections/chapter5}
+\newpage
+
+%----------------------- References -----------------------------------
+\titleformat{\section}[display]
+  {\large\bfseries}
+  {}
+  {0pt}
+  {}[\rule{\textwidth}{0.4pt}]
+
+\bibliography{references}
+\addcontentsline{toc}{section}{References}
+\newpage
+
+%======================================================================
+%  APPENDICES  --  Arabic numbering continues (official UWU template)
+%======================================================================
+\addcontentsline{toc}{section}{Appendix}
+\input{sections/appendix}
+\cleardoublepage
+
+\end{document}

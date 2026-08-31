@@ -1,0 +1,203 @@
+\documentclass[conference,pageno]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=black
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{AI-Based Tomato Ripeness Stage Detection and Sorting System with Shelf-Life Estimation for the Padma Variety Using Computer Vision and Conveyor Automation}
+
+\author{
+\IEEEauthorblockN{
+\begin{tabular}{c@{\hskip 0.5in}c@{\hskip 0.5in}c}
+1\textsuperscript{st} W. K. Gayan & 2\textsuperscript{nd} P. L. H. Hirushan & 3\textsuperscript{rd} K. R. D. H. Gunawardhana \\
+\textit{Dept. of Computer Science \& Inf.} & \textit{Dept. of Computer Science \& Inf.} & \textit{Dept. of Computer Science \& Inf.} \\
+\textit{Uva Wellassa University} & \textit{Uva Wellassa University} & \textit{Uva Wellassa University} \\
+Badulla, Sri Lanka & Badulla, Sri Lanka & Badulla, Sri Lanka \\
+iit21062@uwu.ac.lk & iit21019@uwu.ac.lk & iit21017@uwu.ac.lk
+\end{tabular}
+}
+\vspace{0.15in}
+\IEEEauthorblockN{
+\begin{tabular}{c@{\hskip 0.5in}c@{\hskip 0.5in}c}
+4\textsuperscript{th} U. G. A. T. Premathilake & 5\textsuperscript{th} M. P. A. M. Rathnakumara & 6\textsuperscript{th} D. P. Jayathunga\textsuperscript{*} \\
+\textit{Dept. of Export Agriculture} & \textit{Dept. of Science \& Tech.} & \textit{Dept. of Computer Science \& Inf.} \\
+\textit{Uva Wellassa University} & \textit{Uva Wellassa University} & \textit{Uva Wellassa University} \\
+Badulla, Sri Lanka & Badulla, Sri Lanka & Badulla, Sri Lanka \\
+apekshika@uwu.ac.lk & ayesha.r@uwu.ac.lk & poornima@uwu.ac.lk
+\end{tabular}
+}
+}
+
+\maketitle
+
+\pagestyle{plain}
+\thispagestyle{plain}
+
+\begin{abstract}
+Post-harvest losses remain high for perishable fresh produce like tomatoes in Sri Lanka due to manual grading, which is slow, operator-dependent, and prone to causing physical damage \cite{abekoon2024}. This paper presents an integrated, real-time detection and mechatronic sorting system for the local Padma tomato variety (\textit{Solanum lycopersicum}) \cite{abekoon2024}. The system classifies fruit into four ripening stages (green, breaker, turning, red) and a defect group using a YOLOv8-medium vision pipeline trained on 7,849 validated images \cite{dwyer2024}. Tested on a held-out split, the model achieved a precision of 0.906, a recall of 0.922, and a mAP@50 of 0.936, operating at 6.7 ms per frame \cite{padilla2020, terven2023}. A conveyor prototype driven by a stepper motor and controlled via an ESP32 microcontroller uses non-contact infrared presence sensors to trigger servo-actuated sorting gates dynamically, avoiding timing errors associated with fluctuating belt speeds \cite{moya2025}. Furthermore, each classification is linked to a cultivar-specific remaining shelf-life estimation (ranging from 31 days for green down to 0 days for defects) derived from a 50-green-tomato observational study and reported alongside batch-level key performance indicators on a live interactive dashboard \cite{geetha2025, tarlak2023}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Padma tomato, YOLOv8, post-harvest sorting, conveyor automation, shelf-life estimation.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Post-harvest loss represents a major efficiency bottleneck in the supply chain of perishable fresh produce, particularly impacting smallholder growers in regions lacking comprehensive cold-chain infrastructure where grading is predominantly performed manually \cite{abekoon2024}. The tomato (\textit{Solanum lycopersicum}) is highly vulnerable as a climacteric fruit; respiration and ethylene production drive rapid post-harvest changes including chlorophyll loss, carotenoid accumulation, and cell-wall softening that lead to bruising and fungal decay \cite{abekoon2024}. 
+
+In Sri Lanka, the Padma variety is a vital cash crop valued for its bacterial wilt resistance and storage qualities \cite{abekoon2024}. However, grading at collecting centers relies on subjective visual assessments by operators sorting bulk lots by red surface color ratios. This manual approach causes inconsistency and introduces microscopic skin abrasions that facilitate pathogen entry \cite{abekoon2024}. 
+
+Automated vision systems utilizing single-stage object detectors from the You Only Look Once (YOLO) family offer a viable solution for rapid, contactless grading on moving conveyor belts \cite{redmon2016, terven2023}. Nevertheless, transferring these technologies to a specific local cultivar requires customized datasets, robust tracking policies to handle continuous color gradients, and mechanical control architectures that ensure reliable, bruise-free physical sorting \cite{moya2025}.
+
+The primary contributions of this work include: (1) compiling and annotating a cultivar-specific detection dataset for Padma tomatoes across four ripening stages and a defect class; (2) designing and validating a real-time mechatronic sorting prototype featuring sensor-released gate actuation; and (3) integrating cultivar-specific shelf-life calculations with an interactive operator dashboard providing batch-level analytics \cite{geetha2025}.
+
+\section{Related Work}
+Ripening physiology dictates that surface color serves as the primary indicator of maturity, standardized by the USDA into six visual categories \cite{usda1991}. General grading models often fail when transferred across cultivars without localized retraining, as demonstrated by Nalupano et al.~\cite{nalupano2024} on the Kinalabasa variety. For Padma tomatoes, Abekoon et al.~\cite{abekoon2024} established baseline post-harvest stage durations under simulated market conditions ($29^\circ\text{C}$, 80\% relative humidity, 810 lux), providing a foundation for cultivar-specific grading and shelf-life tracking.
+
+While traditional machine learning relied on handcrafted features within specific color spaces (RGB, HSV, CMYK) \cite{santoso2024} or traditional classifiers like Support Vector Machines \cite{liu2019}, deep convolutional neural networks have largely replaced them due to their capacity to learn robust hierarchical features directly from image data \cite{allo2025, centino2025}. Single-stage detectors such as YOLOv8 offer high inference speeds and anchor-free multi-scale feature fusion well suited for real-time agricultural applications \cite{yang2025, fan2026, terven2023}. 
+
+In mechatronic sorting implementations, actuator timing is frequently calculated from estimated belt speeds, accumulating errors over distance \cite{moya2025}. Utilizing dedicated presence sensors at individual gates ensures precise event-driven actuation. Additionally, wireless communication architectures require reliable command acknowledgment loops to prevent synchronization loss between host vision platforms and microcontrollers \cite{saxena2025}.
+
+\section{Materials and Methods}
+
+\subsection{Overall Research Methodology}
+The research workflow encompasses dataset collection, annotation correction loops, model training and evaluation, hardware prototype fabrication (conveyor frame, ESP32 integration), software dashboard implementation, and closed-loop system testing. This structured pipeline is illustrated in Fig.~1 \cite{dwyer2024}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{Journal paper/Figures/overallmetho.png} 
+\caption{Overall research methodology workflow including data collection, model development, integration, and real-time sorting loops (thesis Figure 3.1) \cite{dwyer2024}.}
+\label{fig:meth}
+\end{figure}
+
+\subsection{Dataset Collection and Preprocessing}
+Padma tomato samples were procured using purposive sampling \cite{etikan2016} from a commercial collecting center in Bandarawela, Badulla District, ensuring natural morphological variations across multi-farm supplies \cite{abekoon2024}. A total of 8,816 raw images were captured inside a controlled lightbox setup under LED illumination, resulting in a refined dataset of 7,849 distinct captured images after quality-control filtering \cite{dwyer2024}. 
+
+The images were categorized into five operational classes: Green, Breaker, Turning, Red, and Defect \cite{usda1991}. The dataset was partitioned into a standard 70:20:10 ratio for training (5,498 images plus 668 augmented defect images), validation (1,574 images), and a held-out test split (777 images) \cite{dwyer2024}. Defect images were specifically augmented using Albumentations \cite{buslaev2020, shorten2019} to balance class representations.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{Journal paper/Figures/lightbox.png} 
+\caption{Image acquisition setups: (a) Controlled lightbox capture setup and (b) Conveyor-mounted camera arrangement (thesis Figure 3.2) \cite{abekoon2024}.}
+\label{fig:acq}
+\end{figure}
+
+\subsection{Model Development and Training}
+A medium-sized YOLOv8 ($\text{YOLOv8m}$) architecture initialized with pre-trained weights was selected to balance detection accuracy and inference latency \cite{redmon2016, terven2023}. Training was executed locally on an NVIDIA GeForce RTX 3070 Ti GPU (8,192 MiB VRAM) for 150 epochs with early stopping patience set to 25 epochs \cite{padilla2020}. Input image resolutions were standardized to $640\times640$ pixels \cite{dwyer2024}.
+
+\subsection{Real-Time Detection and Tracking Policy}
+During live operation, a USB webcam captures frames at $960\times720$ resolution at 30 FPS. A multi-frame tracking mechanism aggregates bounding box predictions across consecutive frames to compute a confidence-weighted majority vote, yielding a single robust classification per fruit prior to exit from the camera field of view \cite{moya2025}.
+
+\subsection{Hardware and Control Integration}
+The mechanical prototype comprises a 25 mm box-section metal frame, a NEMA 23 stepper motor driven via a DM542 driver (3:1 pulley reduction), an ESP32 microcontroller, four MG995 servo-actuated diverter gates, and four infrared reflective presence sensors \cite{saxena2025}. An isolated power distribution design (24V for motors, 12V for logic, separate 5-6V rails for servos) prevents electrical noise interference. 
+
+Rather than calculating gate-opening times based on estimated belt speeds, each gate maintains an internal queue. When a fruit passes a gate's dedicated infrared sensor, the queue is checked; if the front item matches the gate's assigned class, the servo actuates dynamically based on speed-scaled timing profiles \cite{moya2025}. Defect fruits bypass all gates and travel to a terminal reject bin.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{Journal paper/Figures/CAD.png} 
+\caption{Computer-aided design model and assembled hardware prototype of the multi-stage conveyor sorting system (thesis Figure 3.6) \cite{moya2025}.}
+\label{fig:hardware}
+\end{figure}
+
+\subsection{Shelf-Life Estimation Framework}
+Cultivar-specific remaining shelf-life values were integrated via a static lookup table derived from an observational study of 50 green Padma tomatoes \cite{abekoon2024, tarlak2023}. Cumulative stage durations established baseline remaining lifetimes: Green (31 days), Breaker (29 days), Turning (24 days), Red (12 days), and Defect (0 days) \cite{abekoon2024}. These metrics are logged to a local SQLite database and visualized on an interactive Streamlit operator dashboard \cite{geetha2025}.
+
+\section{Results and Discussion}
+
+\subsection{Detection Performance on the Held-Out Test Split}
+Evaluated on the 777-image held-out test split (787 instances), the deployed $\text{YOLOv8m}$ model achieved an overall precision of 0.906, a recall of 0.922, and a mAP@50 of 0.936 \cite{padilla2020}. Per-class results are summarized in Table~I \cite{padilla2020}. Absolute color classes (Green and Red) exhibited the highest performance (mAP@50 of 0.982 and 0.988, respectively), whereas transition classes (Breaker and Turning) and the Defect class reflected the inherent challenges of partitioning continuous physical gradients into discrete bins \cite{usda1991}. 
+
+\begin{table}[htbp]
+\caption{Held-Out Test Set Performance of the Deployed YOLOv8m Model \cite{padilla2020}}
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{mAP@50} & \textbf{mAP@50-95} \\
+\hline
+Breaker & 0.924 & 0.937 & 0.966 & 0.762 \\
+Defect  & 0.766 & 0.818 & 0.804 & 0.599 \\
+Green   & 0.976 & 0.990 & 0.982 & 0.722 \\
+Red     & 0.987 & 0.958 & 0.988 & 0.724 \\
+Turning & 0.880 & 0.906 & 0.941 & 0.749 \\
+\hline
+\textbf{Overall} & \textbf{0.906} & \textbf{0.922} & \textbf{0.936} & \textbf{0.711} \\
+\hline
+\end{tabular}
+\label{tab:perf}
+\end{center}
+\end{table}
+
+Training converged at epoch 52 out of 150 (early stopping triggered at epoch 77) \cite{padilla2020}. Inference latency averaged 6.7 ms per frame, allowing the system to operate well within the 33 ms budget required for real-time 30 FPS video streams \cite{terven2023}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{Journal paper/Figures/results (2).png} 
+\caption{Training and validation loss curves and metrics evolution across epochs for the deployed model (thesis Figure 4.1) \cite{padilla2020}.}
+\label{fig:curves}
+\end{figure}
+
+\subsection{Live Classification and Conveyor Sorting Validation}
+Live trials confirmed the resolution of initial lighting-confound issues where external public defect images had introduced false positives \cite{buslaev2020, shorten2019}. Following dataset re-balancing and lightbox standardization, live dashboard error rates for defect misclassifications dropped from 39.2\% to 1.7\% \cite{dwyer2024}. Closed-loop conveyor testing demonstrated reliable communication over Bluetooth serial links, with the ESP32 successfully acknowledging sequence-numbered command packets and executing synchronized mechanical gate diversions for all four ripening grades while routing defects to the reject stream without packet loss or command duplication \cite{saxena2025, moya2025}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{Journal paper/Figures/All Tomato.jpeg} 
+\caption{Real-time dashboard detections for each of the five classes during system trials: green, breaker, turning, red, and defect (thesis Figure 4.3) \cite{moya2025}.}
+\label{fig:dash}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{Journal paper/Figures/Console log.png} 
+\caption{Console log output of the real-time sorting pipeline, showing class-1 command transmission and ESP32 acknowledgment (ACK) (thesis Figure 4.4) \cite{saxena2025}.}
+\label{fig:log}
+\end{figure}
+
+\section{Conclusion}
+This study successfully designed, implemented, and evaluated an end-to-end automated grading and sorting system customized for the Sri Lankan Padma tomato variety \cite{abekoon2024}. Utilizing a fine-tuned YOLOv8m detector achieving a mAP@50 of 0.936 combined with an ESP32-controlled conveyor featuring sensor-released actuation, the system successfully addresses the limitations of manual sorting \cite{moya2025, terven2023}. Cultivar-specific shelf-life estimations integrated with a real-time operator dashboard provide packhouse managers with actionable batch-level intelligence, demonstrating that low-cost hardware and computer vision can significantly reduce post-harvest inefficiencies \cite{geetha2025, tarlak2023}.
+
+\section*{Acknowledgment}
+The authors acknowledge the academic and technical staff of the Faculty of Applied Sciences, Uva Wellassa University, as well as the management of the commercial tomato collecting center in Bandarawela for facilitating sample collection \cite{abekoon2024}.
+
+\begin{thebibliography}{00}
+\bibitem{abekoon2024} T. Abekoon, H. Sajindra, J. A. D. C. A. Jayakody, E. R. J. Samarakoon, and U. Rathnayake, ``Image processing techniques to identify tomato quality under market conditions,'' \textit{Smart Agricultural Technology}, vol. 7, p. 100433, 2024.
+\bibitem{usda1991} United States Department of Agriculture, ``United States Standards for Grades of Fresh Tomatoes,'' USDA Agricultural Marketing Service, Washington, DC, 1991.
+\bibitem{borba2021} K. R. Borba, D. P. Aykas, M. I. Milani, L. A. Colnago, M. D. Ferreira, and L. E. Rodriguez-Saona, ``Portable near infrared spectroscopy as a tool for fresh tomato quality control analysis in the field,'' \textit{Applied Sciences}, vol. 11, no. 7, p. 3209, 2021.
+\bibitem{tarlak2023} F. Tarlak, ``The use of predictive microbiology for the prediction of the shelf life of food products,'' \textit{Foods}, vol. 12, no. 24, p. 4461, 2023.
+\bibitem{garcia2019} M. B. Garcia, S. Ambat, and R. T. Adao, ``Tomayto, tomahto: A machine learning approach for tomato ripening stage identification using pixel-based color image classification,'' in \textit{Proc. IEEE 11th HNICEM}, 2019, pp. 1--6.
+\bibitem{santoso2024} K. A. Santoso, A. Kamsyakawuni, and S. V. R. Izza, ``Comparison classification of tomatoes ripeness based on RGB, HSV and CMYK colors based on correlation coefficient,'' \textit{Journal of Computers and Digital Business}, vol. 3, no. 3, pp. 112--120, 2024.
+\bibitem{liu2019} G. Liu, S. Mao, and J. H. Kim, ``A mature-tomato detection algorithm using machine learning and color analysis,'' \textit{Sensors}, vol. 19, no. 9, p. 2023, 2019.
+\bibitem{allo2025} Y. M. K. Allo, I. P. Paendong, and P. H. Saputro, ``Classification of tomato ripeness levels using convolutional neural network (CNN),'' \textit{Journal of Intelligent Systems and Information Technology}, vol. 2, no. 2, pp. 80--87, 2025.
+\bibitem{centino2025} M. C. Centino, V. A. Pitogo, and M. P. B. Pacot, ``Tomato maturity assessment: Using convolutional neural networks and image processing-based domain knowledge,'' \textit{AEIS}, vol. 1, no. 1, pp. 34--45, 2025.
+\bibitem{nalupano2024} J. M. G. Nalupano, M. P. Omagap, K. J. G. Fortaleza, F. R. B. Ecraela, and J. J. D. Orquia, ``Classification of Kinalabasa tomato using convolutional neural network,'' \textit{Journal of Innovative Technology Convergence}, vol. 6, no. 3, pp. 99--110, 2024.
+\bibitem{yang2025} Z. Yang, Y. Li, Q. Han, H. Wang, C. Li, and Z. Wu, ``A method for tomato ripeness recognition and detection based on an improved YOLOv8 model,'' \textit{Horticulturae}, vol. 11, no. 1, p. 15, 2025.
+\bibitem{fan2026} X. Fan and X. Chai, ``TRD-Net: An efficient tomato ripeness detection network based on improved YOLO v8 for selective harvesting,'' \textit{Frontiers in Plant Science}, vol. 17, p. 1748741, 2026.
+\bibitem{moya2025} V. Moya, M. Guerra, K. Pazmiño, F. Abedrabbo, F. A. Chicaiza, and D. Pozo-Espín, ``Tomato classification with YOLOv8: Enhancing automated sorting and quality assessment,'' \textit{Smart Agricultural Technology}, vol. 12, p. 101221, 2025.
+\bibitem{geetha2025} G. Geetha, P. C. Prabhu Kumar, V. Suriyaraj, and J. Naveen Kumar, ``Smart prediction of shelf life and tomato sorting using deep learning,'' \textit{Asian Journal of Advances in Agricultural Research}, vol. 25, no. 10, pp. 53--67, 2025.
+\bibitem{saxena2025} A. Saxena, A. Agarwal, B. Nagrath, C. S. Jayavanth, S. Thulasidoss, S. Maheswari, and P. Sasikumar, ``Deep learning-driven IoT solution for smart tomato farming,'' \textit{Scientific Reports}, vol. 15, p. 31092, 2025.
+\bibitem{redmon2016} J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, ``You only look once: Unified, real-time object detection,'' in \textit{Proc. IEEE CVPR}, 2016, pp. 779--788.
+\bibitem{terven2023} J. Terven and D. Cordova-Esparza, ``A comprehensive review of YOLO architectures in computer vision: From YOLOv1 to YOLOv8 and YOLO-NAS,'' \textit{Machine Learning and Knowledge Extraction}, vol. 5, no. 4, pp. 1680--1716, 2023.
+\bibitem{padilla2020} R. Padilla, S. L. Netto, and E. A. B. da Silva, ``A survey on performance metrics for object-detection algorithms,'' in \textit{Proc. 27th IWSSIP}, 2020, pp. 237--242.
+\bibitem{shorten2019} C. Shorten and T. M. Khoshgoftaar, ``A survey on image data augmentation for deep learning,'' \textit{Journal of Big Data}, vol. 6, p. 60, 2019.
+\bibitem{buslaev2020} A. Buslaev, V. I. Iglovikov, E. Khvedchenya, A. Parinov, M. Druzhinin, and A. A. Kalinin, ``Albumentations: Fast and flexible image augmentations,'' \textit{Information}, vol. 11, no. 2, p. 125, 2020.
+\bibitem{etikan2016} I. Etikan, S. A. Musa, and R. S. Alkassim, ``Comparison of convenience sampling and purposive sampling,'' \textit{American Journal of Theoretical and Applied Statistics}, vol. 5, no. 1, pp. 1--4, 2016.
+\bibitem{dwyer2024} B. Dwyer, J. Nelson, and T. Hansen, ``Roboflow (version 1.0) [computer software],'' 2024. [Online]. Available: https://roboflow.com
+\end{thebibliography}
+
+\end{document}

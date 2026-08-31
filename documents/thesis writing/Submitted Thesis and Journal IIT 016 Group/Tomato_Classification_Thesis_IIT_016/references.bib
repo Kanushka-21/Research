@@ -1,0 +1,397 @@
+%=======================================================================
+%  references.bib
+%
+%  EVERY entry below has been checked against the full text of the source
+%  PDF held in documents/references/. Metadata (journal, volume, issue,
+%  pages, DOI) is taken from the article itself, not from a search result.
+%
+%  Guideline H:1 item 15: "Un-cited references should not be listed."
+%  Every entry here is cited at least once in Chapters 1-3.
+%=======================================================================
+
+%--------------------- Domain: tomato ripening and quality -------------
+
+@article{abekoon2024,
+  author  = {Abekoon, Thilina and Sajindra, Hirushan and Jayakody, J. A. D. C. A. and Samarakoon, E. R. J. and Rathnayake, Upaka},
+  title   = {Image processing techniques to identify tomato quality under market conditions},
+  journal = {Smart Agricultural Technology},
+  volume  = {7},
+  pages   = {100433},
+  year    = {2024},
+  doi     = {10.1016/j.atech.2024.100433}
+}
+% VERIFIED: 100 greenhouse-grown Padma fruits, 25 each from Matale, Kandy,
+% Nuwara Eliya and Badulla. Stored at 29 C, 80 % RH, 810 lux (measured
+% averages of 60 Sri Lankan marketplaces). 12,342 daily images. Two CNNs.
+% Table 4 stage durations: Green 2, Breakers 2, Turning 3, Pink 4,
+% Light Red 8, Red 12 days (31 days total). Six USDA stages, not four.
+
+@article{usda1991,
+  author    = {{United States Department of Agriculture}},
+  title     = {United States Standards for Grades of Fresh Tomatoes},
+  publisher = {Fresh Products Branch, Fruit and Vegetable Division, Agricultural Marketing Service},
+  address   = {Washington, DC},
+  year      = {1991}
+}
+% VERIFIED via Abekoon (2024) Fig. 1: Green; Breaker (<=10 % red);
+% Turning (10-30 %); Pink (30-60 %); Light Red (60-90 %); Red (>90 %).
+
+@article{borba2021,
+  author  = {Borba, Karla R. and Aykas, Didem P. and Milani, Maria I. and Colnago, Luiz A. and Ferreira, Marcos D. and Rodriguez-Saona, Luis E.},
+  title   = {Portable near infrared spectroscopy as a tool for fresh tomato quality control analysis in the field},
+  journal = {Applied Sciences},
+  volume  = {11},
+  number  = {7},
+  pages   = {3209},
+  year    = {2021},
+  doi     = {10.3390/app11073209}
+}
+
+@article{tarlak2023,
+  author  = {Tarlak, Fatih},
+  title   = {The use of predictive microbiology for the prediction of the shelf life of food products},
+  journal = {Foods},
+  volume  = {12},
+  number  = {24},
+  pages   = {4461},
+  year    = {2023},
+  doi     = {10.3390/foods12244461}
+}
+% NOT YET VERIFIED AGAINST FULL TEXT -- no PDF in documents/references/.
+% Obtain the PDF and confirm before final submission, or remove.
+
+%--------------------- Domain: classical image features ----------------
+
+@inproceedings{garcia2019,
+  author    = {Garcia, Manuel B. and Ambat, Shaneth and Adao, Rossana T.},
+  title     = {Tomayto, tomahto: A machine learning approach for tomato ripening stage identification using pixel-based color image classification},
+  booktitle = {Proceedings of the IEEE 11th International Conference on Humanoid, Nanotechnology, Information Technology, Communication and Control, Environment, and Management (HNICEM)},
+  pages     = {1--6},
+  publisher = {IEEE},
+  year      = {2019},
+  doi       = {10.1109/HNICEM48295.2019.9072892}
+}
+
+@article{santoso2024,
+  author  = {Santoso, Kiswara Agung and Kamsyakawuni, Ahmad and Izza, Siti Virna Rohmatul},
+  title   = {Comparison classification of tomatoes ripeness based on RGB, HSV and CMYK colors based on correlation coefficient},
+  journal = {Journal of Computers and Digital Business},
+  volume  = {3},
+  number  = {3},
+  pages   = {112--120},
+  year    = {2024},
+  doi     = {10.56427/jcbd.v3i3.410}
+}
+% VERIFIED: correlation-coefficient method on RGB, HSV and CMYK.
+% Best result CMYK, correlation 0.87, mean squared error 0.0047.
+% NO support-vector machine, NO L*a*b*, NO 82.7 % accuracy figure.
+
+@article{liu2019,
+  author  = {Liu, Guoxu and Mao, Shuyi and Kim, Jae Ho},
+  title   = {A mature-tomato detection algorithm using machine learning and color analysis},
+  journal = {Sensors},
+  volume  = {19},
+  number  = {9},
+  pages   = {2023},
+  year    = {2019},
+  doi     = {10.3390/s19092023}
+}
+
+@article{ifmalinda2023,
+  author  = {Ifmalinda and Andasuryani and Rasinta, Ilma},
+  title   = {Identification of tomato ripeness levels (\textit{Lycopersicum esculentum} Mill.) using android-based digital image processing},
+  journal = {IOP Conference Series: Earth and Environmental Science},
+  volume  = {1182},
+  pages   = {012003},
+  year    = {2023},
+  doi     = {10.1088/1755-1315/1182/1/012003}
+}
+
+%--------------------- Domain: CNN and YOLO ripeness models ------------
+
+@article{allo2025,
+  author  = {Allo, Yusi Meilany Kendek and Paendong, Indah Prisilia and Saputro, Pujo Hari},
+  title   = {Classification of tomato ripeness levels using convolutional neural network (CNN)},
+  journal = {Journal of Intelligent Systems and Information Technology},
+  volume  = {2},
+  number  = {2},
+  pages   = {80--87},
+  year    = {2025}
+}
+% VERIFIED: plain CNN, 3,600 public images (2,550 Kaggle, 1,050 GitHub),
+% three classes (unripe, half-ripe, ripe), 80:20 split, 10 epochs,
+% 99.39 % validation accuracy. NOT a mobile/embedded architecture and
+% NOT a source for post-harvest physiology.
+
+@article{centino2025,
+  author  = {Centino, Marjorie C. and Pitogo, Vicente A. and Pacot, Mark Phil B.},
+  title   = {Tomato maturity assessment: Using convolutional neural networks and image processing-based domain knowledge},
+  journal = {AEIS},
+  volume  = {1},
+  number  = {1},
+  pages   = {34--45},
+  year    = {2025}
+}
+% VERIFIED: BINARY ripe/unripe CNN. 1,114 images, 70:30 split, 5-fold
+% cross-validation, 95.52 % accuracy, blue-channel plus Otsu background
+% removal. Contains NO four-stage scheme and NO 30 %/80 % boundaries.
+
+@article{nalupano2024,
+  author  = {Nalupano, Jethel Mae G. and Omagap, Myline P. and Fortaleza, Katherine Jane G. and Ecraela, Fema Rose B. and Orquia, John Jowil D.},
+  title   = {Classification of Kinalabasa tomato using convolutional neural network},
+  journal = {Journal of Innovative Technology Convergence},
+  volume  = {6},
+  number  = {3},
+  pages   = {99--110},
+  year    = {2024},
+  doi     = {10.69478/JITC2024v6n3a10}
+}
+% VERIFIED: MobileNetV2, three colour categories, 10 epochs, lr 0.001.
+% Accuracy 94 % (NOT 91.8 %), specificity only 64 %.
+
+@article{waseem2025,
+  author  = {Waseem, Muhammad and Sajjad, Muhammad Muzzammil and Naqvi, Laraib Haider and Majeed, Yaqoob and Rehman, Tanzeel Ur and Nadeem, Tayyaba},
+  title   = {Deep learning model for precise and rapid prediction of tomato maturity based on image recognition},
+  journal = {Food Physics},
+  volume  = {2},
+  pages   = {100060},
+  year    = {2025}
+}
+
+@article{yang2025,
+  author  = {Yang, Zhanshuo and Li, Yaxian and Han, Qiyu and Wang, Haoming and Li, Chunjiang and Wu, Zhandong},
+  title   = {A method for tomato ripeness recognition and detection based on an improved YOLOv8 model},
+  journal = {Horticulturae},
+  volume  = {11},
+  number  = {1},
+  pages   = {15},
+  year    = {2025},
+  doi     = {10.3390/horticulturae11010015}
+}
+
+@article{fan2026,
+  author  = {Fan, Xiangpeng and Chai, Xiujuan},
+  title   = {{TRD-Net}: An efficient tomato ripeness detection network based on improved YOLO v8 for selective harvesting},
+  journal = {Frontiers in Plant Science},
+  volume  = {17},
+  pages   = {1748741},
+  year    = {2026},
+  doi     = {10.3389/fpls.2026.1748741}
+}
+
+@article{huang2025,
+  author  = {Huang, Wenyuan and Liao, Yiran and Wang, Peiling and Chen, Ziao and Yang, Ziqi and Xu, Lijia and Mu, Jiong},
+  title   = {{AITP-YOLO}: Improved tomato ripeness detection model based on multiple strategies},
+  journal = {Frontiers in Plant Science},
+  volume  = {16},
+  pages   = {1596739},
+  year    = {2025},
+  doi     = {10.3389/fpls.2025.1596739}
+}
+
+@article{ding2026,
+  author  = {Ding, Jieyuan and Zou, Yunhan and Wang, Yu and Han, Lianjie and Xiao, Yawen and Zhang, Ruihong and Xi, Xiaobo},
+  title   = {A lightweight task-adaptive {YOLO} for tomato ripeness detection in complex orchard environments},
+  journal = {Horticulturae},
+  volume  = {12},
+  pages   = {805},
+  year    = {2026},
+  doi     = {10.3390/horticulturae12070805}
+}
+
+@article{wang2026,
+  author  = {Wang, Dongyang and Fang, Zhijie and Mo, Man and Gan, Jinchong and Sun, Zijun},
+  title   = {Tomato ripeness detection method based on improved {YOLOv11} lightweight model},
+  journal = {Frontiers of Agricultural Science and Engineering},
+  volume  = {13},
+  number  = {3},
+  pages   = {25657},
+  year    = {2026},
+  doi     = {10.15302/J-FASE-2025657}
+}
+
+@article{safira2026,
+  author  = {Safira, Intan and Fuadi, Wahyu and Rosnita, Lidya},
+  title   = {Performance of {YOLOv8} algorithm and real-time detection transformer in tomato ripeness detection system},
+  journal = {Journal of Artificial Intelligence and Engineering Applications},
+  volume  = {5},
+  number  = {3},
+  year    = {2026}
+}
+
+@article{liu2024,
+  author  = {Liu, Yang and Wei, Chaojie and Yoon, Seung-Chul and Ni, Xinzhi and Wang, Wei and Liu, Yizhe and Wang, Daren and Wang, Xiaorong and Guo, Xiaohuan},
+  title   = {Development of multimodal fusion technology for tomato maturity assessment},
+  journal = {Sensors},
+  volume  = {24},
+  number  = {8},
+  pages   = {2467},
+  year    = {2024},
+  doi     = {10.3390/s24082467}
+}
+
+%--------------------- Domain: sorting rigs and embedded systems -------
+
+@article{moya2025,
+  author  = {Moya, Viviana and Guerra, Michael and Pazmi{\~n}o, Karina and Abedrabbo, Faruk and Chicaiza, Fernando A. and Pozo-Esp{\'i}n, David},
+  title   = {Tomato classification with {YOLOv8}: Enhancing automated sorting and quality assessment},
+  journal = {Smart Agricultural Technology},
+  volume  = {12},
+  pages   = {101221},
+  year    = {2025}
+}
+% VERIFIED: kidney tomatoes (Ecuadorian Technical Standard 1745 -- NOT a
+% spherical uniform cultivar). Stepper-driven conveyor, overhead camera,
+% servo bins. Three classes (green, red, damaged) PLUS three size grades.
+% 2,145 images. 99.6 % classification, 97.1 % size accuracy. Belt sensors
+% are used to TRIGGER THE CAMERA, not to release the sorting gates.
+
+@article{geetha2025,
+  author  = {Geetha, G. and Prabhu Kumar, P. C. and Suriyaraj, V. and Naveen Kumar, J.},
+  title   = {Smart prediction of shelf life and tomato sorting using deep learning},
+  journal = {Asian Journal of Advances in Agricultural Research},
+  volume  = {25},
+  number  = {10},
+  pages   = {53--67},
+  year    = {2025},
+  doi     = {10.9734/ajaar/2025/v25i10680}
+}
+% VERIFIED: two YOLOv8 models used to determine shelf life, PLUS an
+% automated servo-driven sorting prototype with IoT alerting. This paper
+% substantially occupies the grade-to-shelf-life space, so the novelty
+% claim in Section 2.3 is scoped around it rather than against it.
+
+@article{patria2025,
+  author  = {Patria, Lintang and Makhtar, Mokhairi and Sambas, Aceng and Multajam, Rizki and Ayob, Ahmad Faisal Mohamad and Jamaludin, Shahrizan and Sanjaya, W. S. Mada and Chuan, Ong Yew},
+  title   = {Development of a vision-based mobile robot with artificial neural networks (ANN) for classification of tomato ripeness},
+  journal = {Engineering Letters},
+  volume  = {33},
+  number  = {6},
+  pages   = {32--43},
+  year    = {2025}
+}
+% VERIFIED: an autonomous MOBILE ROBOT that drives through a field.
+% ESP32-CAM, ANN on RGB features, 1,000 images, three ripeness classes,
+% 94.5 % accuracy, 0.15 s per frame, 0.8 m/s navigation.
+% CONTAINS NO CONVEYOR, NO SORTING GATE AND NO FIFO QUEUE. Cite it only
+% for embedded vision classification, never for conveyor mechatronics.
+
+@article{saxena2025,
+  author  = {Saxena, Akshit and Agarwal, Aayushi and Nagrath, Bhavya and Jayavanth, Carmel Sanjana and Thulasidoss, Shamita and Maheswari, S. and Sasikumar, P.},
+  title   = {Deep learning-driven {IoT} solution for smart tomato farming},
+  journal = {Scientific Reports},
+  volume  = {15},
+  pages   = {31092},
+  year    = {2025},
+  doi     = {10.1038/s41598-025-15615-3}
+}
+% VERIFIED: ESP32 sensor nodes, Raspberry Pi with Pi Camera running
+% YOLOv8 on three ripeness classes. Quantisation, pruning and TensorRT
+% gave a 35 % inference speed-up at 52.8 % classification accuracy.
+
+%--------------------- Domain: methods and tooling ---------------------
+
+@inproceedings{redmon2016,
+  author    = {Redmon, Joseph and Divvala, Santosh and Girshick, Ross and Farhadi, Ali},
+  title     = {You only look once: Unified, real-time object detection},
+  booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {779--788},
+  publisher = {IEEE},
+  year      = {2016}
+}
+
+@article{terven2023,
+  author  = {Terven, Juan and Cordova-Esparza, Diana},
+  title   = {A comprehensive review of {YOLO} architectures in computer vision: From {YOLOv1} to {YOLOv8} and {YOLO-NAS}},
+  journal = {Machine Learning and Knowledge Extraction},
+  volume  = {5},
+  number  = {4},
+  pages   = {1680--1716},
+  year    = {2023},
+  doi     = {10.3390/make5040083}
+}
+
+@inproceedings{lin2014,
+  author    = {Lin, Tsung-Yi and Maire, Michael and Belongie, Serge and Hays, James and Perona, Pietro and Ramanan, Deva and Doll{\'a}r, Piotr and Zitnick, C. Lawrence},
+  title     = {Microsoft {COCO}: Common objects in context},
+  booktitle = {Computer Vision -- ECCV 2014},
+  pages     = {740--755},
+  publisher = {Springer},
+  year      = {2014}
+}
+
+@inproceedings{padilla2020,
+  author    = {Padilla, Rafael and Netto, Sergio L. and da Silva, Eduardo A. B.},
+  title     = {A survey on performance metrics for object-detection algorithms},
+  booktitle = {Proceedings of the 27th International Conference on Systems, Signals and Image Processing (IWSSIP)},
+  pages     = {237--242},
+  publisher = {IEEE},
+  year      = {2020}
+}
+
+@article{shorten2019,
+  author  = {Shorten, Connor and Khoshgoftaar, Taghi M.},
+  title   = {A survey on image data augmentation for deep learning},
+  journal = {Journal of Big Data},
+  volume  = {6},
+  pages   = {60},
+  year    = {2019},
+  doi     = {10.1186/s40537-019-0197-0}
+}
+
+@article{buslaev2020,
+  author  = {Buslaev, Alexander and Iglovikov, Vladimir I. and Khvedchenya, Eugene and Parinov, Alex and Druzhinin, Mikhail and Kalinin, Alexandr A.},
+  title   = {Albumentations: Fast and flexible image augmentations},
+  journal = {Information},
+  volume  = {11},
+  number  = {2},
+  pages   = {125},
+  year    = {2020},
+  doi     = {10.3390/info11020125}
+}
+
+@article{etikan2016,
+  author  = {Etikan, Ilker and Musa, Sulaiman Abubakar and Alkassim, Rukayya Sunusi},
+  title   = {Comparison of convenience sampling and purposive sampling},
+  journal = {American Journal of Theoretical and Applied Statistics},
+  volume  = {5},
+  number  = {1},
+  pages   = {1--4},
+  year    = {2016},
+  doi     = {10.11648/j.ajtas.20160501.11}
+}
+
+@misc{dwyer2024,
+  author       = {Dwyer, Brad and Nelson, Joseph and Hansen, Tyler},
+  title        = {Roboflow (Version 1.0) [Computer software]},
+  year         = {2024},
+  howpublished = {\url{https://roboflow.com}}
+}
+
+%=======================================================================
+%  PENDING VERIFICATION -- two sources from the Word draft are deliberately
+%  NOT entered as BibTeX entries below, because they could not be checked
+%  against a source PDF and the claims attributed to them are inconsistent
+%  with their stated titles. Their bibliographic details are given here as
+%  plain text purely so they can be typed in once verified. (This block
+%  intentionally contains no at-sign character anywhere, so no BibTeX
+%  parser can mistake any part of it for the start of an entry.)
+%
+%  1) Li, D., Bai, L., Wang, R., Ying, S. (2024). Research progress of
+%     machine learning in extending and regulating the shelf life of
+%     fruits and vegetables. Foods, 13(18), 3025.
+%     The Word draft cited this for a conveyor gate time-of-flight
+%     equation and for belt-slip dynamics. A machine-learning shelf-life
+%     review is very unlikely to contain either -- check before using.
+%
+%  2) Nahiduzzaman, M. and coauthors (2025). Deep learning-based real-time
+%     detection of tomato ripeness using YOLOv8 on Raspberry Pi 4.
+%     Engineering Research Express, 7(1), 015219.
+%     Quoted in the draft at 98.6 percent (green) / 85.0 percent (red),
+%     unverified. saxena2025 above is a verified Raspberry Pi plus YOLOv8
+%     alternative, but reports 52.8 percent accuracy, so the numbers
+%     cannot simply be transferred from one entry to the other.
+%
+%  Once each PDF is obtained and its claims confirmed, add it as a normal
+%  article-type entry in the body of this file above, not in this comment.
+%=======================================================================
