@@ -4,8 +4,9 @@ __pycache__/
 # Local Python env — see PROJECT.md, path kept as-is per team decision
 .venv/
 
-# Roboflow dataset exports (thousands of images, not source-controllable)
-dataset/
+# Roboflow dataset exports -- previously excluded (thousands of images), now
+# tracked in git as of 2026-08-25 per team decision (turned out to be ~260MB,
+# not the multi-GB size originally assumed)
 
 # Local training runs -- track metrics/plots/configs and each run's best.pt (small enough,
 # and needed to actually redeploy without retraining), exclude the bulky intermediate
@@ -16,3 +17,7 @@ Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/runs_local/*/weight
 # Pretrained base checkpoints Ultralytics auto-downloads on first use -- not results,
 # no need to version them
 Tomato_Projet_five_class--Deplyment-Model--Tomato-Research--/*.pt
+
+# Full-length prototype demo video -- 300+ MB, over GitHub's 100 MB per-file
+# push limit; kept locally only, per team decision 2026-08-26
+final video of working prototype/Tomato Video Project.mp4
