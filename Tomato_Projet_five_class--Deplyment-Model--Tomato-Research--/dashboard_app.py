@@ -209,26 +209,33 @@ with col_settings:
     )
 with col_controls:
     st.subheader("Stream control")
-    if st.button("Test camera", width="stretch"):
-        test_cap = _open_camera()
-        ok = test_cap.isOpened()
-        test_cap.release()
-        st.success("Camera OK") if ok else st.error("Camera not found or can't read a frame.")
+    # Rendered into a single placeholder (like frame_placeholder/live_placeholder
+    # below) instead of directly into the column -- without this, a rerun
+    # triggered mid-stream (clicking Test camera/Start/Reset while streaming)
+    # can briefly paint the new buttons before the previous run's copies are
+    # cleared, showing a duplicated/ghosted button stack for a moment.
+    controls_placeholder = st.empty()
+    with controls_placeholder.container():
+        if st.button("Test camera", width="stretch"):
+            test_cap = _open_camera()
+            ok = test_cap.isOpened()
+            test_cap.release()
+            st.success("Camera OK") if ok else st.error("Camera not found or can't read a frame.")
 
-    start_col, stop_col = st.columns(2)
-    if start_col.button("Start", width="stretch", type="primary"):
-        st.session_state.streaming = True
-    if stop_col.button("Stop", width="stretch"):
-        st.session_state.streaming = False
+        start_col, stop_col = st.columns(2)
+        if start_col.button("Start", width="stretch", type="primary"):
+            st.session_state.streaming = True
+        if stop_col.button("Stop", width="stretch"):
+            st.session_state.streaming = False
 
-    if st.button(
-        "Reset ESP32 queue", width="stretch", disabled=bluetooth is None, key="reset_queue_controls",
-        help="Clears every gate's queue on the ESP32. Use this when a gate is stuck holding "
-             "entries that never popped (e.g. an IR sensor that didn't fire) instead of "
-             "manually waving a hand in front of the sensor.",
-    ):
-        reply = bluetooth.send_serial_commands("reset")
-        st.success(f"Queue reset -> {reply}") if reply else st.error("Reset sent, but no confirmation reply came back.")
+        if st.button(
+            "Reset ESP32 queue", width="stretch", disabled=bluetooth is None, key="reset_queue_controls",
+            help="Clears every gate's queue on the ESP32. Use this when a gate is stuck holding "
+                 "entries that never popped (e.g. an IR sensor that didn't fire) instead of "
+                 "manually waving a hand in front of the sensor.",
+        ):
+            reply = bluetooth.send_serial_commands("reset")
+            st.success(f"Queue reset -> {reply}") if reply else st.error("Reset sent, but no confirmation reply came back.")
 
 st.divider()
 
