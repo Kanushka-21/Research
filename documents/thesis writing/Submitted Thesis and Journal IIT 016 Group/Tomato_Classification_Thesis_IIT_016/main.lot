@@ -1,0 +1,22 @@
+\contentsline {table}{\numberline {2.1}{\ignorespaces Post-harvest stage durations reported for the Padma variety under simulated market conditions}}{7}{table.caption.3}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Materials and samples used in the research}}{14}{table.caption.5}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Principal hardware components of the conveyor sorting prototype}}{14}{table.caption.6}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Software, frameworks and libraries used in the research}}{15}{table.caption.7}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Composition of the dataset used for model development}}{17}{table.caption.9}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Per class annotated object instance counts by dataset split}}{17}{table.caption.10}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Correspondence between the six standard maturity stages and the four operational classes used in this research}}{18}{table.caption.12}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces Ripening stage and quality classes used in this research}}{19}{table.caption.13}%
+\contentsline {table}{\numberline {3.8}{\ignorespaces Dataset split used for model development}}{22}{table.caption.15}%
+\contentsline {table}{\numberline {3.9}{\ignorespaces Training configuration used for model development}}{23}{table.caption.16}%
+\contentsline {table}{\numberline {3.10}{\ignorespaces System test cases and expected results}}{31}{table.caption.21}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Held out test set performance of the deployed YOLOv8m model}}{33}{table.caption.22}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Defect class and overall detection performance across successive dataset corrections}}{35}{table.caption.25}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Live dashboard class distribution before and after the imaging-conditions correction}}{36}{table.caption.26}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Real-time pipeline output for one representative fruit of each class in the August 2026 five-class trial, from the dashboard and controller console logs}}{38}{table.caption.28}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Recorded stage durations and derived remaining shelf life by operational class}}{40}{table.caption.30}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces System test outcomes}}{41}{table.caption.31}%
+\contentsline {table}{\numberline {5.1}{\ignorespaces Final per-class annotated instance counts by dataset split}}{52}{table.caption.33}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Full training configuration for the deployed model}}{54}{table.caption.35}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Best and last logged training epochs, validation split (deployed model)}}{55}{table.caption.36}%
+\contentsline {table}{\numberline {5.4}{\ignorespaces ESP32 pin assignment, currently deployed firmware}}{57}{table.caption.38}%
+\contentsline {table}{\numberline {5.5}{\ignorespaces Command protocol of the currently deployed firmware}}{61}{table.caption.40}%

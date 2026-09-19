@@ -1,0 +1,868 @@
+\glsdefs@newdocentry{AI}%
+{%
+name={\acronymfont {\glsentryshort {AI}}},%
+sort={AI},%
+type={acronym},%
+first={AI},%
+firstplural={AIs},%
+text={AI},%
+plural={AIs},%
+description={Artificial Intelligence},%
+descriptionplural={Artificial Intelligence},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Artificial Intelligence},%
+longplural={Artificial Intelligences},%
+short={AI},%
+shortplural={AIs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{ANN}%
+{%
+name={\acronymfont {\glsentryshort {ANN}}},%
+sort={ANN},%
+type={acronym},%
+first={ANN},%
+firstplural={ANNs},%
+text={ANN},%
+plural={ANNs},%
+description={Artificial Neural Network},%
+descriptionplural={Artificial Neural Network},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Artificial Neural Network},%
+longplural={Artificial Neural Networks},%
+short={ANN},%
+shortplural={ANNs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{CAD}%
+{%
+name={\acronymfont {\glsentryshort {CAD}}},%
+sort={CAD},%
+type={acronym},%
+first={CAD},%
+firstplural={CADs},%
+text={CAD},%
+plural={CADs},%
+description={Computer Aided Design},%
+descriptionplural={Computer Aided Design},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Computer Aided Design},%
+longplural={Computer Aided Designs},%
+short={CAD},%
+shortplural={CADs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{CNN}%
+{%
+name={\acronymfont {\glsentryshort {CNN}}},%
+sort={CNN},%
+type={acronym},%
+first={CNN},%
+firstplural={CNNs},%
+text={CNN},%
+plural={CNNs},%
+description={Convolutional Neural Network},%
+descriptionplural={Convolutional Neural Network},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Convolutional Neural Network},%
+longplural={Convolutional Neural Networks},%
+short={CNN},%
+shortplural={CNNs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{COCO}%
+{%
+name={\acronymfont {\glsentryshort {COCO}}},%
+sort={COCO},%
+type={acronym},%
+first={COCO},%
+firstplural={COCOs},%
+text={COCO},%
+plural={COCOs},%
+description={Common Objects in Context},%
+descriptionplural={Common Objects in Context},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Common Objects in Context},%
+longplural={Common Objects in Contexts},%
+short={COCO},%
+shortplural={COCOs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{CUDA}%
+{%
+name={\acronymfont {\glsentryshort {CUDA}}},%
+sort={CUDA},%
+type={acronym},%
+first={CUDA},%
+firstplural={CUDAs},%
+text={CUDA},%
+plural={CUDAs},%
+description={Compute Unified Device Architecture},%
+descriptionplural={Compute Unified Device Architecture},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Compute Unified Device Architecture},%
+longplural={Compute Unified Device Architectures},%
+short={CUDA},%
+shortplural={CUDAs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{DFL}%
+{%
+name={\acronymfont {\glsentryshort {DFL}}},%
+sort={DFL},%
+type={acronym},%
+first={DFL},%
+firstplural={DFLs},%
+text={DFL},%
+plural={DFLs},%
+description={Distribution Focal Loss},%
+descriptionplural={Distribution Focal Loss},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Distribution Focal Loss},%
+longplural={Distribution Focal Losss},%
+short={DFL},%
+shortplural={DFLs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{FIFO}%
+{%
+name={\acronymfont {\glsentryshort {FIFO}}},%
+sort={FIFO},%
+type={acronym},%
+first={FIFO},%
+firstplural={FIFOs},%
+text={FIFO},%
+plural={FIFOs},%
+description={First-In, First-Out},%
+descriptionplural={First-In, First-Out},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={First-In, First-Out},%
+longplural={First-In, First-Outs},%
+short={FIFO},%
+shortplural={FIFOs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{FN}%
+{%
+name={\acronymfont {\glsentryshort {FN}}},%
+sort={FN},%
+type={acronym},%
+first={FN},%
+firstplural={FNs},%
+text={FN},%
+plural={FNs},%
+description={False Negative},%
+descriptionplural={False Negative},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={False Negative},%
+longplural={False Negatives},%
+short={FN},%
+shortplural={FNs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{FP}%
+{%
+name={\acronymfont {\glsentryshort {FP}}},%
+sort={FP},%
+type={acronym},%
+first={FP},%
+firstplural={FPs},%
+text={FP},%
+plural={FPs},%
+description={False Positive},%
+descriptionplural={False Positive},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={False Positive},%
+longplural={False Positives},%
+short={FP},%
+shortplural={FPs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{FPS}%
+{%
+name={\acronymfont {\glsentryshort {FPS}}},%
+sort={FPS},%
+type={acronym},%
+first={FPS},%
+firstplural={FPSs},%
+text={FPS},%
+plural={FPSs},%
+description={Frames Per Second},%
+descriptionplural={Frames Per Second},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Frames Per Second},%
+longplural={Frames Per Seconds},%
+short={FPS},%
+shortplural={FPSs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{GPU}%
+{%
+name={\acronymfont {\glsentryshort {GPU}}},%
+sort={GPU},%
+type={acronym},%
+first={GPU},%
+firstplural={GPUs},%
+text={GPU},%
+plural={GPUs},%
+description={Graphics Processing Unit},%
+descriptionplural={Graphics Processing Unit},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Graphics Processing Unit},%
+longplural={Graphics Processing Units},%
+short={GPU},%
+shortplural={GPUs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{HSV}%
+{%
+name={\acronymfont {\glsentryshort {HSV}}},%
+sort={HSV},%
+type={acronym},%
+first={HSV},%
+firstplural={HSVs},%
+text={HSV},%
+plural={HSVs},%
+description={Hue, Saturation, Value},%
+descriptionplural={Hue, Saturation, Value},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Hue, Saturation, Value},%
+longplural={Hue, Saturation, Values},%
+short={HSV},%
+shortplural={HSVs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{IoU}%
+{%
+name={\acronymfont {\glsentryshort {IoU}}},%
+sort={IoU},%
+type={acronym},%
+first={IoU},%
+firstplural={IoUs},%
+text={IoU},%
+plural={IoUs},%
+description={Intersection over Union},%
+descriptionplural={Intersection over Union},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Intersection over Union},%
+longplural={Intersection over Unions},%
+short={IoU},%
+shortplural={IoUs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{IR}%
+{%
+name={\acronymfont {\glsentryshort {IR}}},%
+sort={IR},%
+type={acronym},%
+first={IR},%
+firstplural={IRs},%
+text={IR},%
+plural={IRs},%
+description={Infrared},%
+descriptionplural={Infrared},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Infrared},%
+longplural={Infrareds},%
+short={IR},%
+shortplural={IRs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{KPI}%
+{%
+name={\acronymfont {\glsentryshort {KPI}}},%
+sort={KPI},%
+type={acronym},%
+first={KPI},%
+firstplural={KPIs},%
+text={KPI},%
+plural={KPIs},%
+description={Key Performance Indicator},%
+descriptionplural={Key Performance Indicator},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Key Performance Indicator},%
+longplural={Key Performance Indicators},%
+short={KPI},%
+shortplural={KPIs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{LED}%
+{%
+name={\acronymfont {\glsentryshort {LED}}},%
+sort={LED},%
+type={acronym},%
+first={LED},%
+firstplural={LEDs},%
+text={LED},%
+plural={LEDs},%
+description={Light Emitting Diode},%
+descriptionplural={Light Emitting Diode},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Light Emitting Diode},%
+longplural={Light Emitting Diodes},%
+short={LED},%
+shortplural={LEDs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{mAP}%
+{%
+name={\acronymfont {\glsentryshort {mAP}}},%
+sort={mAP},%
+type={acronym},%
+first={mAP},%
+firstplural={mAPs},%
+text={mAP},%
+plural={mAPs},%
+description={Mean Average Precision},%
+descriptionplural={Mean Average Precision},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Mean Average Precision},%
+longplural={Mean Average Precisions},%
+short={mAP},%
+shortplural={mAPs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{MiB}%
+{%
+name={\acronymfont {\glsentryshort {MiB}}},%
+sort={MiB},%
+type={acronym},%
+first={MiB},%
+firstplural={MiBs},%
+text={MiB},%
+plural={MiBs},%
+description={Mebibyte},%
+descriptionplural={Mebibyte},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Mebibyte},%
+longplural={Mebibytes},%
+short={MiB},%
+shortplural={MiBs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{NIR}%
+{%
+name={\acronymfont {\glsentryshort {NIR}}},%
+sort={NIR},%
+type={acronym},%
+first={NIR},%
+firstplural={NIRs},%
+text={NIR},%
+plural={NIRs},%
+description={Near Infrared},%
+descriptionplural={Near Infrared},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Near Infrared},%
+longplural={Near Infrareds},%
+short={NIR},%
+shortplural={NIRs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{RCNN}%
+{%
+name={\acronymfont {\glsentryshort {RCNN}}},%
+sort={R-CNN},%
+type={acronym},%
+first={R-CNN},%
+firstplural={R-CNNs},%
+text={R-CNN},%
+plural={R-CNNs},%
+description={Region-based Convolutional Neural Network},%
+descriptionplural={Region-based Convolutional Neural Network},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Region-based Convolutional Neural Network},%
+longplural={Region-based Convolutional Neural Networks},%
+short={R-CNN},%
+shortplural={R-CNNs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{RGB}%
+{%
+name={\acronymfont {\glsentryshort {RGB}}},%
+sort={RGB},%
+type={acronym},%
+first={RGB},%
+firstplural={RGBs},%
+text={RGB},%
+plural={RGBs},%
+description={Red, Green, Blue},%
+descriptionplural={Red, Green, Blue},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Red, Green, Blue},%
+longplural={Red, Green, Blues},%
+short={RGB},%
+shortplural={RGBs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{RPN}%
+{%
+name={\acronymfont {\glsentryshort {RPN}}},%
+sort={RPN},%
+type={acronym},%
+first={RPN},%
+firstplural={RPNs},%
+text={RPN},%
+plural={RPNs},%
+description={Region Proposal Network},%
+descriptionplural={Region Proposal Network},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Region Proposal Network},%
+longplural={Region Proposal Networks},%
+short={RPN},%
+shortplural={RPNs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{RTDETR}%
+{%
+name={\acronymfont {\glsentryshort {RTDETR}}},%
+sort={RT-DETR},%
+type={acronym},%
+first={RT-DETR},%
+firstplural={RT-DETRs},%
+text={RT-DETR},%
+plural={RT-DETRs},%
+description={Real-Time Detection Transformer},%
+descriptionplural={Real-Time Detection Transformer},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Real-Time Detection Transformer},%
+longplural={Real-Time Detection Transformers},%
+short={RT-DETR},%
+shortplural={RT-DETRs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{SPP}%
+{%
+name={\acronymfont {\glsentryshort {SPP}}},%
+sort={SPP},%
+type={acronym},%
+first={SPP},%
+firstplural={SPPs},%
+text={SPP},%
+plural={SPPs},%
+description={Serial Port Profile},%
+descriptionplural={Serial Port Profile},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Serial Port Profile},%
+longplural={Serial Port Profiles},%
+short={SPP},%
+shortplural={SPPs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{SVM}%
+{%
+name={\acronymfont {\glsentryshort {SVM}}},%
+sort={SVM},%
+type={acronym},%
+first={SVM},%
+firstplural={SVMs},%
+text={SVM},%
+plural={SVMs},%
+description={Support Vector Machine},%
+descriptionplural={Support Vector Machine},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Support Vector Machine},%
+longplural={Support Vector Machines},%
+short={SVM},%
+shortplural={SVMs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{TP}%
+{%
+name={\acronymfont {\glsentryshort {TP}}},%
+sort={TP},%
+type={acronym},%
+first={TP},%
+firstplural={TPs},%
+text={TP},%
+plural={TPs},%
+description={True Positive},%
+descriptionplural={True Positive},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={True Positive},%
+longplural={True Positives},%
+short={TP},%
+shortplural={TPs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{USB}%
+{%
+name={\acronymfont {\glsentryshort {USB}}},%
+sort={USB},%
+type={acronym},%
+first={USB},%
+firstplural={USBs},%
+text={USB},%
+plural={USBs},%
+description={Universal Serial Bus},%
+descriptionplural={Universal Serial Bus},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Universal Serial Bus},%
+longplural={Universal Serial Buss},%
+short={USB},%
+shortplural={USBs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{USDA}%
+{%
+name={\acronymfont {\glsentryshort {USDA}}},%
+sort={USDA},%
+type={acronym},%
+first={USDA},%
+firstplural={USDAs},%
+text={USDA},%
+plural={USDAs},%
+description={United States Department of Agriculture},%
+descriptionplural={United States Department of Agriculture},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={United States Department of Agriculture},%
+longplural={United States Department of Agricultures},%
+short={USDA},%
+shortplural={USDAs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{VRAM}%
+{%
+name={\acronymfont {\glsentryshort {VRAM}}},%
+sort={VRAM},%
+type={acronym},%
+first={VRAM},%
+firstplural={VRAMs},%
+text={VRAM},%
+plural={VRAMs},%
+description={Video Random Access Memory},%
+descriptionplural={Video Random Access Memory},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Video Random Access Memory},%
+longplural={Video Random Access Memorys},%
+short={VRAM},%
+shortplural={VRAMs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{YOLO}%
+{%
+name={\acronymfont {\glsentryshort {YOLO}}},%
+sort={YOLO},%
+type={acronym},%
+first={YOLO},%
+firstplural={YOLOs},%
+text={YOLO},%
+plural={YOLOs},%
+description={You Only Look Once},%
+descriptionplural={You Only Look Once},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={You Only Look Once},%
+longplural={You Only Look Onces},%
+short={YOLO},%
+shortplural={YOLOs},%
+counter={page},%
+parent={},%
+%
+}%
+

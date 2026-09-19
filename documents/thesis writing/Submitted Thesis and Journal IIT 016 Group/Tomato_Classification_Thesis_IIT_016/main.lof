@@ -1,0 +1,14 @@
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Tomato cultivation areas in the Badulla District and major local cultivars.}}{2}{figure.caption.2}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Overall research methodology}}{13}{figure.caption.4}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Image acquisition setup for dataset capture and the conveyor mounted camera arrangement}}{16}{figure.caption.8}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Representative sample images for each of the five target classes}}{17}{figure.caption.11}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Example of bounding box annotation for a tomato image}}{19}{figure.caption.14}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Real time tomato detection and classification process}}{25}{figure.caption.17}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Computer aided design model and assembled hardware prototype}}{26}{figure.caption.18}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Software architecture and operator dashboard of the detection and sorting application}}{27}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Complete end to end system workflow}}{29}{figure.caption.20}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Training and validation curves for the deployed model}}{34}{figure.caption.23}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Detection metric curves as a function of confidence threshold: precision (top left), recall (top right), F1 (bottom left) and precision--recall (bottom right)}}{34}{figure.caption.24}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Real-time dashboard detections for each of the five classes during the August 2026 system trials: green, breaker, turning, red and defect (left to right), each shown with its bounding box, predicted class and confidence while the tracker is in the \textsc {tracking} state}}{37}{figure.caption.27}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Console log output of the real-time sorting pipeline, showing the classification of a green tomato, speed-scaled gate actuation scheduling, wireless transmission of the \texttt {class1} command, and subsequent queue-state updates acknowledged (\texttt {ACK}) by the ESP32 microcontroller}}{38}{figure.caption.29}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Schematic wiring diagram of the ESP32 control system, illustrating GPIO pin configurations, sensor input interfaces, servo/stepper actuator connections, and isolated power distribution domains.}}{60}{figure.caption.39}%
