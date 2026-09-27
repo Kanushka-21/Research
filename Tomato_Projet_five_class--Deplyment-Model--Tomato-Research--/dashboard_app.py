@@ -116,22 +116,25 @@ def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCap
     On this machine a cold DSHOW open sometimes fails until something else
     (e.g. the Windows Camera app) has first woken the sensor -- retrying a
     couple of times a beat apart reproduces that same wake-up without
-    needing the user to open another app first."""
+    needing the user to open another app first. If the configured USB-camera
+    index is missing, fall back to index 0 so one-camera laptops still work."""
     # Prefer DirectShow on Windows, but fall back when a driver is temporarily
     # unavailable through that backend after another app released the camera.
     backends = [cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY]
+    camera_indices = [CAMERA_INDEX] + ([0] if CAMERA_INDEX != 0 else [])
     cap = cv2.VideoCapture()
     for attempt in range(attempts):
-        for backend in backends:
-            candidate = cv2.VideoCapture()
-            try:
-                candidate.open(CAMERA_INDEX, backend)
-                time.sleep(0.5)
-                if candidate.isOpened() and candidate.read()[0]:
-                    return candidate
-            except cv2.error:
-                pass
-            candidate.release()
+        for index in camera_indices:
+            for backend in backends:
+                candidate = cv2.VideoCapture()
+                try:
+                    candidate.open(index, backend)
+                    time.sleep(0.5)
+                    if candidate.isOpened() and candidate.read()[0]:
+                        return candidate
+                except cv2.error:
+                    pass
+                candidate.release()
         if attempt < attempts - 1:
             time.sleep(retry_delay_s)
     return cap
