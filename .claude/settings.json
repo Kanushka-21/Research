@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(pandoc --version)",
+      "PowerShell(winget search pandoc --accept-source-agreements 2>&1)",
+      "PowerShell(winget install --id JohnMacFarlane.Pandoc --accept-package-agreements --accept-source-agreements --silent)",
+      "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Windows\\\\Fonts\\\\times.ttf'\")",
+      "Bash(pip list *)",
+      "Bash(pip install *)",
+      "Bash(rm -f _preview_p*.png)",
+      "Bash(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"Tomato Video Project.mp4\")",
+      "Bash(rm -f _check_p*.png)",
+      "Bash(cp main.pdf \"../Thesis_LaTeX_Compiled.pdf\")",
+      "Bash(git status *)"
+    ]
+  }
+}

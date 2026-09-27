@@ -49,6 +49,14 @@ if HIDE_LIBRARY_LOGS:
     warnings.filterwarnings("ignore", category=FutureWarning)
     logging.getLogger("streamlit").setLevel(logging.ERROR)
 
+# On a laptop with a built-in webcam, DSHOW index 0 is usually the built-in
+# "Integrated Camera", not the external USB camera mounted on the rig --
+# index 1 is the USB camera on this machine. If the feed opens the wrong
+# camera (built-in flashlight/LED turns on instead of the USB camera),
+# change this index -- check Settings > Bluetooth & devices > Cameras, or
+# Device Manager > Cameras, for the enumeration order on a given machine.
+CAMERA_INDEX = 1
+
 from conveyor_core import (
     MODEL_PATH,
     CONFIDENCE_THRESHOLD,
@@ -117,7 +125,7 @@ def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCap
         for backend in backends:
             candidate = cv2.VideoCapture()
             try:
-                candidate.open(0, backend)
+                candidate.open(CAMERA_INDEX, backend)
                 time.sleep(0.5)
                 if candidate.isOpened() and candidate.read()[0]:
                     return candidate
@@ -214,17 +222,33 @@ with col_settings:
     )
 with col_controls:
     st.subheader("Stream control")
-    if st.button("Test camera", width="stretch"):
-        test_cap = _open_camera()
-        ok = test_cap.isOpened()
-        test_cap.release()
-        st.success("Camera OK") if ok else st.error("Camera not found or can't read a frame.")
+    # Rendered into a single placeholder (like frame_placeholder/live_placeholder
+    # below) instead of directly into the column -- without this, a rerun
+    # triggered mid-stream (clicking Test camera/Start/Reset while streaming)
+    # can briefly paint the new buttons before the previous run's copies are
+    # cleared, showing a duplicated/ghosted button stack for a moment.
+    controls_placeholder = st.empty()
+    with controls_placeholder.container():
+        if st.button("Test camera", width="stretch"):
+            test_cap = _open_camera()
+            ok = test_cap.isOpened()
+            test_cap.release()
+            st.success("Camera OK") if ok else st.error("Camera not found or can't read a frame.")
 
-    start_col, stop_col = st.columns(2)
-    if start_col.button("Start", width="stretch", type="primary"):
-        st.session_state.streaming = True
-    if stop_col.button("Stop", width="stretch"):
-        st.session_state.streaming = False
+        start_col, stop_col = st.columns(2)
+        if start_col.button("Start", width="stretch", type="primary"):
+            st.session_state.streaming = True
+        if stop_col.button("Stop", width="stretch"):
+            st.session_state.streaming = False
+
+        if st.button(
+            "Reset ESP32 queue", width="stretch", disabled=bluetooth is None, key="reset_queue_controls",
+            help="Clears every gate's queue on the ESP32. Use this when a gate is stuck holding "
+                 "entries that never popped (e.g. an IR sensor that didn't fire) instead of "
+                 "manually waving a hand in front of the sensor.",
+        ):
+            reply = bluetooth.send_serial_commands("reset")
+            st.success(f"Queue reset -> {reply}") if reply else st.error("Reset sent, but no confirmation reply came back.")
 
 st.divider()
 
@@ -234,6 +258,13 @@ with col_video:
     frame_placeholder = st.empty()
 with col_live:
     st.subheader("This session")
+    if st.button(
+        "Reset ESP32 queue", width="stretch", disabled=bluetooth is None, key="reset_queue_session",
+        help="Same as the Reset ESP32 queue button above -- kept here too so it's reachable "
+             "without scrolling back up while a session is actively streaming.",
+    ):
+        reply = bluetooth.send_serial_commands("reset")
+        st.success(f"Queue reset -> {reply}") if reply else st.error("Reset sent, but no confirmation reply came back.")
     live_placeholder = st.empty()
 
 st.divider()

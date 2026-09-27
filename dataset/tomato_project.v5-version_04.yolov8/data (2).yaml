@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['breaker', 'defect', 'green', 'red', 'turning']
+
+roboflow:
+  workspace: tomatoproject-sshvc
+  project: tomato_project-betna
+  version: 5
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/tomatoproject-sshvc/tomato_project-betna/dataset/5
