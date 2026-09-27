@@ -117,16 +117,21 @@ def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCap
     (e.g. the Windows Camera app) has first woken the sensor -- retrying a
     couple of times a beat apart reproduces that same wake-up without
     needing the user to open another app first."""
+    # Prefer DirectShow on Windows, but fall back when a driver is temporarily
+    # unavailable through that backend after another app released the camera.
+    backends = [cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY]
+    cap = cv2.VideoCapture()
     for attempt in range(attempts):
-        cap = cv2.VideoCapture(CAMERA_INDEX)
-        time.sleep(0.5)
-        if cap.isOpened():
+        for backend in backends:
+            candidate = cv2.VideoCapture()
             try:
-                if cap.read()[0]:
-                    return cap
+                candidate.open(CAMERA_INDEX, backend)
+                time.sleep(0.5)
+                if candidate.isOpened() and candidate.read()[0]:
+                    return candidate
             except cv2.error:
                 pass
-        cap.release()
+            candidate.release()
         if attempt < attempts - 1:
             time.sleep(retry_delay_s)
     return cap
