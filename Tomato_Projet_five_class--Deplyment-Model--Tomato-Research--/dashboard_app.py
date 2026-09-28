@@ -120,18 +120,27 @@ def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCap
     # Prefer DirectShow on Windows, but fall back when a driver is temporarily
     # unavailable through that backend after another app released the camera.
     backends = [cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY]
+    # Always try the configured USB camera index first, then probe a few nearby
+    # indices in case a virtual camera (e.g. Iriun) shifted enumeration order.
+    camera_indices = [CAMERA_INDEX] + [i for i in range(5) if i != CAMERA_INDEX]
     cap = cv2.VideoCapture()
     for attempt in range(attempts):
         for backend in backends:
-            candidate = cv2.VideoCapture()
-            try:
-                candidate.open(CAMERA_INDEX, backend)
-                time.sleep(0.5)
-                if candidate.isOpened() and candidate.read()[0]:
-                    return candidate
-            except cv2.error:
-                pass
-            candidate.release()
+            for cam_idx in camera_indices:
+                candidate = cv2.VideoCapture()
+                try:
+                    candidate.open(cam_idx, backend)
+                    time.sleep(0.5)
+                    if candidate.isOpened():
+                        ok, _ = candidate.read()
+                        if not ok:
+                            time.sleep(0.2)
+                            ok, _ = candidate.read()
+                        if ok:
+                            return candidate
+                except cv2.error:
+                    pass
+                candidate.release()
         if attempt < attempts - 1:
             time.sleep(retry_delay_s)
     return cap
