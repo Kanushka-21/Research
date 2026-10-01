@@ -23,6 +23,7 @@ Usage:
 """
 
 import logging
+import os
 import time
 import warnings
 
@@ -55,7 +56,11 @@ if HIDE_LIBRARY_LOGS:
 # camera (built-in flashlight/LED turns on instead of the USB camera),
 # change this index -- check Settings > Bluetooth & devices > Cameras, or
 # Device Manager > Cameras, for the enumeration order on a given machine.
-CAMERA_INDEX = 1
+# If the feed shows "Please start Iriun Webcam", the index is pointing at the
+# Iriun virtual camera, not the USB camera. The order differs between
+# machines, so override it per machine without editing the code:
+#   PowerShell:  $env:CAMERA_INDEX = "0"; python run.py
+CAMERA_INDEX = int(os.environ.get("CAMERA_INDEX", "1"))
 
 from conveyor_core import (
     MODEL_PATH,
@@ -120,21 +125,36 @@ def _open_camera(attempts: int = 4, retry_delay_s: float = 0.8) -> "cv2.VideoCap
     # Prefer DirectShow on Windows, but fall back when a driver is temporarily
     # unavailable through that backend after another app released the camera.
     backends = [cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY]
-    cap = cv2.VideoCapture()
+    # Try CAMERA_INDEX first, then the other indices -- the USB camera's index
+    # differs between laptops (built-in webcam / Iriun virtual camera shift it).
+    indices = [CAMERA_INDEX] + [i for i in range(4) if i != CAMERA_INDEX]
     for attempt in range(attempts):
-        for backend in backends:
-            candidate = cv2.VideoCapture()
-            try:
-                candidate.open(CAMERA_INDEX, backend)
-                time.sleep(0.5)
-                if candidate.isOpened() and candidate.read()[0]:
-                    return candidate
-            except cv2.error:
-                pass
-            candidate.release()
+        for index in indices:
+            for backend in backends:
+                candidate = cv2.VideoCapture()
+                try:
+                    candidate.open(index, backend)
+                    time.sleep(0.5)
+                    if candidate.isOpened():
+                        ok, frame = candidate.read()
+                        if ok and not _is_virtual_placeholder(frame):
+                            print(f"[CAMERA] Using camera index {index} (backend {backend})")
+                            return candidate
+                except cv2.error:
+                    pass
+                candidate.release()
         if attempt < attempts - 1:
             time.sleep(retry_delay_s)
-    return cap
+    return cv2.VideoCapture()
+
+
+def _is_virtual_placeholder(frame) -> bool:
+    """True for the Iriun Webcam virtual camera's "Please start Iriun Webcam"
+    frame (pure black with a little white text), which the Iriun driver serves
+    whenever the Iriun app isn't running. A real sensor has noise, so it never
+    produces a frame that is almost entirely exact-zero black."""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return (gray == 0).mean() > 0.9
 
 
 @st.cache_resource(show_spinner="Loading model...")
@@ -219,6 +239,18 @@ with col_settings:
         "Confidence threshold", 0.05, 0.95, CONFIDENCE_THRESHOLD, key="conf_slider",
         help="Per-frame detection threshold fed into the tracker. F1-optimal point from "
              "training analysis is ~0.45.",
+    )
+
+    manual_exposure = st.checkbox(
+        "Manual camera exposure", value=True, key="manual_exposure",
+        help="Off = let the camera's auto-exposure settle for ~1.5s, then lock it. "
+             "On = use the exposure slider below (use it when the feed looks washed out/too white).",
+    )
+    exposure_value = st.slider(
+        "Camera exposure (lower = darker)", -13, -1, -6, key="exposure_slider",
+        disabled=not manual_exposure,
+        help="DirectShow exposure step (roughly 2^value seconds). Each step down halves the "
+             "brightness. Applied when the camera starts -- changing it while streaming restarts the feed.",
     )
 with col_controls:
     st.subheader("Stream control")
@@ -357,6 +389,10 @@ if st.session_state.streaming:
 
         cap.set(cv2.CAP_PROP_AUTO_WB, 0)
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 = manual on most DirectShow/MSMF backends
+        if manual_exposure:
+            # Locking auto-exposure alone can freeze a washed-out exposure (seen with the
+            # USB camera under bright light), so set an explicit value from the sidebar.
+            cap.set(cv2.CAP_PROP_EXPOSURE, exposure_value)
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = _load_model(selected_model_path, device)

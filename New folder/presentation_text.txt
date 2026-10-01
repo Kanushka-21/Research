@@ -1,0 +1,584 @@
+
+===== SLIDE 1 =====
+AI-BASED TOMATO
+SORTING AND SHELF-LIFE
+ESTIMATION SYSTEM
+UWU/IIT/21/017   |   UWU/IIT/21/019   |   UWU/IIT/21/062
+Ms. D.P. Jayathunga | Dr. U.G.A.T. Premathilake | Ms. M.P.A.M. Rathnakumara
+AI-Based Tomato Ripening Stage Detection and Sorting System
+with Shelf-Life Estimation for the Commonly Consumed Padma
+Variety in Sri Lanka Using Computer Vision and Conveyor
+Automation
+IIT Group No 16
+
+===== SLIDE 2 =====
+TABLE OF CONTENT
+2
+01 Introduction 
+02 Research Problem
+04 Motivation
+03 Aims & Objectives
+06 Proposed Methodology
+05 Literature Review
+07 Results & Discussion
+08 Conclusions
+10 Publication 
+09 Recommendation
+11 References
+12 Demostration
+
+===== SLIDE 3 =====
+INTRODUC TION Project Description
+This research presents the efficiency and consistency of Padma tomato grading by
+introducing an AI-integrated automation system that predicts shelf life, reduces post
+harvest losses and labor dependency, and boosts profitability for Sri Lankan farmers.
+3
+AI and vision with conveyor for ripeness, defects, and shelf life.
+Automated sorting via a servo actuated mechanism.
+Deep model identifies ripeness, defects, and shelf life real time.
+KPI dashboard for accuracy, throughput, and defect rate monitoring.
+
+===== SLIDE 4 =====
+Stage 1 (Green)
+Stage 4 (Red Ripe)
+Stage 2 (Breaker)
+Stage 3 (Turning)
+Uniform green colour, firm texture
+ Green-yellow transition, <30% red area
+Orange to pink surface, 30–80% red
+coverage
+More than 80% red surface, softer
+texture
+100% Green
+Green - Yellow
+Partial Red/Orange
+Deep Red
+INTRODUC TION Project Description
+Defects (Cracks, bruising, rot) will be diverted off the conveyor for immediate processing or
+rejection
+4
+
+===== SLIDE 5 =====
+INTRODUC TION Background Study 
+Tomatoes are a high-
+value cash crop essential
+for local consumption and
+potential export markets.
+Economic Importance Manual Grading 
+Challenges
+The current sorting process
+is labor-intensive, slow, and
+highly susceptible to human
+error, leading to inconsistent
+product quality.
+Subjective grading leads
+to mixed batches, lower
+quality, and unpredictable
+shelf life with higher
+financial risk.
+Inconsistent Quality
+and Shelf Life
+5
+Economic Importance
+Manual Grading 
+Challenges
+Inconsistent Quality
+and Shelf Life
+
+===== SLIDE 6 =====
+Dominant Local Cultivar: Key crop in Badulla & Nuwara Eliya, preferred by farmers for its high
+yield and bacterial wilt resistance.
+High Post-Harvest Losses: Perishable climacteric fruit susceptible to microscopic skin damage
+and rapid decay from manual sorting.
+Established Research Baseline: Post-harvest ripening stages and 31-day shelf life benchmarked
+under local conditions by Abekoon et al. (2024).
+Badulla 
+Bandarawela
+Welimada
+Mahiyangana
+T‐245 
+Tomato‐1014
+Red‐Bullet 
+King‐Kong,
+Padma 
+Platinum
+INTRODUC TION Why “Padma” ?
+6
+
+===== SLIDE 7 =====
+Manual tomato sorting is labor intensive, time consuming, and prone
+to subjective judgments, leading to mixed quality and various shelf life
+in market batches.
+Post-harvest losses can reach up to 20% due to poor or inconsistent
+grading (FAO, 2022).
+There is a lack of automated solutions optimized for Padma tomatoes,
+especially for detecting multiple ripening stages and defects under
+real-time, local conditions.
+Addressing these gaps is essential for enhanced productivity, reduced
+waste, and improved profitability for Sri Lankan farmers.
+1
+2
+3
+4
+RESEARCH PROBLEM
+7
+
+===== SLIDE 8 =====
+To design and develop an AI-based real-time system to detect, classify, and sort Padma
+tomatoes based on ripeness stage and visible defects, and to estimate remaining shelf life.
+FINAL GOAL
+8
+
+===== SLIDE 9 =====
+To collect and label a local dataset of more than 9000 Padma tomato
+images covering four ripeness stages and one defect class under real farm
+and post-harvest lighting conditions.
+To develop and train a Deep Learning model that performs multi-class
+classification and defect detection.
+To design and construct a mechanical conveyor prototype mechanism that
+automatically sorts tomatoes according to detected ripeness stage and
+defects.
+To integrate and evaluate a shelf-life prediction and KPI monitoring system
+that estimates remaining freshness (in days) and displays class distribution,
+defect ratio, and throughput on a live dashboard.
+OBJECTIVES
+9
+
+===== SLIDE 10 =====
+10
+MOTIVATION
+High Post-Harvest Losses in
+Local Produce
+Limitations of Manual Visual
+Grading
+Gap in Cultivar-Specific AI &
+Conveyor Automation
+Need for an Integrated
+System
+
+===== SLIDE 11 =====
+Study / Source Methodology &
+Scope Key Limitation / Gap Relevance to Our
+Work
+Abekoon et al.
+(2024)
+Image processing
+on Sri Lankan
+Padma variety (7
+stages)
+Offline classification
+of static images; no
+AI object detector or
+conveyor sorting
+Groundwork for
+Padma ripening
+stage duration &
+shelf-life mapping
+Moya et al. (2025)
+YOLOv8 model
+deployed on
+conveyor sorting
+line
+Limited to 3 broad
+classes; no shelf-life
+prediction or KPI
+tracking
+Baseline proof for
+real-time single-
+stage conveyor
+detection feasibility
+Geetha et al. (2025)
+Deep learning for
+ripeness + shelf-life
+estimation
+Generic datasets;
+error-prone
+constant-speed
+actuation
+Justifies combining
+vision-based sorting
+with live shelf-life
+metrics 11
+LITERATURE REVIEW
+
+===== SLIDE 12 =====
+12
+Data Labeling
+Training
+Test
+Validtion
+Data
+Gathering
+GREEN
+ BREAKER
+TURNING
+RED
+RED Defect
+Data Splitting
+Dataset Compilation
+GREEN
+BREAKER
+TURNING
+RED
+YOLOv8 Training Training Metrics
+RED
+Defect Ripeness Detection
+Model Training
+Tomato SortingConveyor KPI Dashboard
+Outcome
+METHODOLOGY OVERVIEW
+
+===== SLIDE 13 =====
+DATA ACQUISITION &
+PREPARATION 
+CLD Farm Fresh
+(Bandarawela) 
+Controlled white-
+box + LED setup 
+>9,600 images, 5
+classes 
+Roboflow
+annotation 
+ MODEL DEVELOPMENT
+& TRAINING
+YOLOv8m
+Single-model
+approach 
+PyTorch/Ultralytics
+training 
+13
+METHODOLOGY
+
+===== SLIDE 14 =====
+14
+METHODOLOGY
+SOFTWARE DESIGN 
+Real-time inference
+pipeline 
+KPI dashboard
+(Python Streamlit)
+Shelf-life
+estimation
+TESTING & EVALUATION 
+4-phase testing
+strategy 
+Performance metrics
+(mAP, precision)
+Prototype Lab &
+Bench Validation
+HARDWARE INTEGRATION 
+Conveyor system 
+ESP32
+Microcontroller
+Actuator & sensors
+
+===== SLIDE 15 =====
+15
+METHODOLOGY Data Acquisition & Dataset Preparation
+9,600+ Images, Roboflow platform, Lightbox setup, 5 Classes (Green, Breaker, Turning, Red, Defect).
+
+===== SLIDE 16 =====
+16
+METHODOLOGY Wiring Diagram
+
+===== SLIDE 17 =====
+PROTOTYPE DESIGN
+17
+4-Stage Sorting Chutes
+Overhead Camera Mount
+NEMA 17 Stepper Drive Motor
+Servo Gate Actuator
+
+===== SLIDE 18 =====
+18
+
+===== SLIDE 19 =====
+YOLOv8 model retrained and evaluated on an expanded Padma tomato dataset (5
+classes: green, breaker, turning, red, defect)
+≈11,400+ annotated 
+tomatoes across 5 classes
+19
+RESULTS & DISCUSSION                     
+Classes are well balanced 
+(~2,100–2,450 instances per class)
+
+===== SLIDE 20 =====
+20
+RESULTSRESULTS & DISCUSSION                      
+These graphs show the model learned
+well on the new dataset. The training and
+validation losses drop quickly in the first
+epochs and then level off (better box
+placement and class predictions).
+Validation loss stays low and does not
+rise again, so there is no sign of
+overfitting. Precision and recall reach
+about 0.93–0.94, mAP50 about 0.96 and
+mAP50-95 about 0.70. The model makes
+few false detections, finds almost all
+tomatoes, and places the boxes
+accurately.
+
+===== SLIDE 21 =====
+This Precision–Recall graph shows the model
+now works well for all five classes. Green and
+red are still the strongest (about 0.99 AP).
+Defect detection has improved the most, from
+about 0.19 to about 0.93 AP, so defects are no
+longer a weak point. Overall mAP@0.5 is
+about 0.96, and the F1 curve peaks at about
+0.91 at a confidence of about 0.53.
+ 21
+RESULTSRESULTS &
+DISCUSSION
+
+===== SLIDE 22 =====
+22
+Results Summary –Previous vs. New Model
+Metric Previous New
+Annotated tomatoes ≈9,300 ≈11,400
+Instances per class ~1,500–2,000 ~2,100–2,450
+mAP@0.5 (all classes) 0.903 0.960
+Defect AP 0.185 0.93
+Best F1 score 0.89 0.91
+Recall (all classes) 0.95 0.98
+K E Y  T A K E A W A Y S
+• Larger, more balanced dataset: about 2,000 more annotated tomatoes, and every class now has more than 2,100 instances.
+• Higher overall accuracy: mAP@0.5 rose from 0.90 to 0.96.
+• Defect detection greatly improved: defect AP went from 0.19 to 0.93, so it is no longer the weakest class.
+• More stable and confident: the F1 score is higher and the best confidence threshold rose from 0.39 to 0.53.
+CONCLUSION The new YOLOv8 model is more accurate and reliable across all five ripeness and defect classes. The
+biggest gain is in defect detection.
+
+===== SLIDE 23 =====
+Final Outcome -: Tomato Shelf Life Estimation
+Experiment conducted under room temperature.(between 22°C-24°C)
+Observations recorded daily morning time over 31 days.
+Shelf life estimation for each ripening stage:
+Purpose: Helps in determining optimal sorting and storage time.
+23
+RESULTS & DISCUSSION
+
+===== SLIDE 24 =====
+24
+Day 01
+Day 02
+Day 03
+Day 04
+Day 05
+Day 06
+Day 07
+Day 08
+Day 09
+Day 10
+Day 11
+Day 12
+Day 13
+Day 14
+Day 15
+Day 16
+Day 17
+Day 18
+Day 19
+Day 20
+Day 21
+Day 22
+Day 23
+Day 24
+Day 25
+Day 26
+Day 27
+Day 28
+Day 29
+Day 30
+Day 31
+RESULTS
+
+===== SLIDE 25 =====
+25
+OUTC OME Software Logic & Real-time Object Tracking
+The system combines multi-frame OpenCV centroid tracking with speed-
+scaled IR sensor triggers and Bluetooth queues to ensure accurate, zero-
+duplicate tomato sorting without frame drops.
+
+===== SLIDE 26 =====
+26
+C ONC LUSION
+High-Precision
+Vision System
+Sensor-Driven
+Sorting
+Logistics & Shelf-
+Life Intelligence
+Supply Chain
+Impact
+YOLOv8m AI
+Model: Achieved
+0.936 mAP@50
+high classification
+accuracy.
+Ultra-Fast Speed:
+Operates at 6.7
+ms per frame.
+ESP32 Control:
+Event-triggered IR
+sensors.
+Precise Sorting:
+Zero fruit
+damage/timing
+errors.
+31-Day Mapping:
+Tracks lifespan
+per stage.
+Live Dashboard:
+Real-time batch
+metrics.
+Automated
+Padma Tomato
+Grading: Replaces
+manual handling
+with low-cost AI
+1
+2
+3
+4
+
+===== SLIDE 27 =====
+27
+RECOMMENDATION
+single level project, with no interaction using laptop,
+machine can be run as a single unit without using a laptop ,
+and process can done via rasbery pi or upper version , (as
+a future improvement)
+seperate model to remove non
+tomato objects at the begening 
+detect the tomatos with max
+stepper motor belt speed
+Multi-Object Tracking & High-
+Throughput Sorting
+ Per-Fruit Dynamic Shelf-Life
+Estimation
+
+===== SLIDE 28 =====
+REFERENCES
+Abekoon, T., Sajindra, H., Jayakody, J. A. D. C. A., Samarakoon, E. R. J., & Rathnayake, U.
+(2024). Image processing techniques to identify tomato quality under market
+conditions. Smart Agricultural Technology, 7, 100433.[ppl-ai-file-
+upload.s3.amazonaws] 
+Allo, Y. M. K., Paendong, I. P., & Saputro, P. H. (2025). Classification of tomato ripeness
+levels using convolutional neural network (CNN). Journal of Intelligent Systems and
+Information Technology, 22.[ppl-ai-file-upload.s3.amazonaws] 
+Food and Agriculture Organization of the United Nations. (2022). Estimation of post-
+harvest losses and their management. FAO Statistics and Policy Briefs.
+28
+
+===== SLIDE 29 =====
+REFERENCES
+Department of Agriculture, Sri Lanka. (2025). Department of Agriculture, Sri Lanka.
+http://www.doa.gov.lk
+Food Security in Sri Lanka report. (2023). Food security in Sri Lanka report.
+Geetha, G., Prabhu Kumar, P. C., Suriyaraj, V., & Naveen Kumar, J. (2025). Smart
+prediction of shelf life and tomato sorting using deep learning. Asian Journal of
+Advances in Agricultural Research, 25(10), 53–67.[ppl-ai-file-upload.s3.amazonaws] 
+Huang, W., Liao, Y., Wang, P., Chen, Z., Yang, Z., Xu, L., & Mu, J. (2025). AITP-YOLO:
+Improved tomato ripeness detection model based on multiple strategies. Frontiers in
+Plant Science, 16, 1596739.[ppl-ai-file-upload.s3.amazonaws] 
+Liu, Y., Wei, C., Yoon, S.-C., Ni, X., Wang, W., Liu, Y., Wang, D., Wang, X., & Guo, X. (2024).
+Development of multimodal fusion technology for tomato maturity assessment.
+Sensors, 24, 2467.[ppl-ai-file-upload.s3.amazonaws] 
+29
+
+===== SLIDE 30 =====
+REFERENCES
+Moya, V., Guerra, M., Pazmiño, K., Abedrabbo, F., Chicaiza, F. A., & Pozo-Espín, D. (2025).
+Tomato classification with YOLOv8: Enhancing automated sorting and quality
+assessment. Smart Agricultural Technology, 12, 101221.[ppl-ai-file-
+upload.s3.amazonaws] 
+Nalupano, J. M. G., Omagap, M. P., Fortaleza, K. J. G., Ecraela, F. R. B., & Orquia, J. J. D.
+(2024). Classification of kinalabasa tomato using convolutional neural network.
+Journal of Innovative Technology Convergence, 63, 99–110.[ppl-ai-file-
+upload.s3.amazonaws] 
+Rahman, M., Hossain, T., & Ferdous, Z. (2021). Automated tomato grading using
+convolutional neural networks. Journal of Agricultural Informatics, 12(1), 43–56.[ppl-ai-
+file-upload.s3.amazonaws] ).
+Zhang, L., Jia, J., Gui, G., Hao, X., Gao, W., & Wang, M. (2018). Deep learning based
+improved classification system for designing tomato harvesting robot. IEEE Access, 6,
+67940–67950.[ppl-ai-file-upload.s3.amazonaws] 
+30
+
+===== SLIDE 31 =====
+REFERENCES
+Waseem, M., Sajjad, M. M., Naqvi, L. H., Majeed, Y., Rehman, T. U., & Nadeem, T. (2025).
+Deep learning model for precise and rapid prediction of tomato maturity based on
+image recognition. Food Physics, 2, 100060.[ppl-ai-file-upload.s3.amazonaws] 
+Wickramasinghe, K. M., et al. (2025). Varietal performance of tomatoes. The Ceylon
+Journal of Science.
+Asian Journal of Agriculture and Horticultural Research. (2025). Tomato cultivation in
+Sri Lanka. Asian Journal of Agriculture and Horticultural Research.
+Zhang, L., Jia, J., Gui, G., Hao, X., Gao, W., & Wang, M. (2018). Deep learning based
+improved classification system for designing tomato harvesting robot. IEEE Access, 6,
+67940–67950.[ppl-ai-file-upload.s3.amazonaws] 
+31
+
+===== SLIDE 32 =====
+32
+DEMONSTRATION
+
+===== SLIDE 33 =====
+33
+
+===== SLIDE 34 =====
+34
+
+===== SLIDE 35 =====
+Participate in data collection
+and labeling of the local Padma
+tomato dataset.
+Lead shelf-life prediction system
+Development and KPI monitoring
+integration.
+Support prototype development
+and testing.
+Contribute to documentation.
+INDIVIDUAL CONTRIBUTION 
+UWU/IIT/21/017
+K.R.D.H.Gunawardhana
+UWU/IIT/21/017
+iit21017@std.uwu.ac.lk
+35
+
+===== SLIDE 36 =====
+INDIVIDUAL CONTRIBUTION 
+Participate in data collection
+and prototype development.
+Lead model design, tuning, and
+performance testing.
+Develop the shelf-life prediction
+component.
+Contribution to documentation
+and compiling results.
+P.L.H.Hirushan
+UWU/IIT/21/019
+iit21019@std.uwu.ac.lk
+36
+
+===== SLIDE 37 =====
+INDIVIDUAL CONTRIBUTION 
+Participate in data collection
+and prototype development.
+Design and assembled the
+conveyor and actuator
+mechanism.
+Integrate sensors and control
+modules.
+Support system testing and
+model deployment.
+Contribution to documentation
+and hardware detailing.
+W.K.Gayan
+iit21062@std.uwu.ac.lk
+UWU/IIT/21/062
+37
+
+===== SLIDE 38 =====
+THANK YOU!
